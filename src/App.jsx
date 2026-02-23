@@ -17,15 +17,15 @@ function fmt(n) {
 export default function App() {
   const [sqft, setSqft] = useState("");
   const [material, setMaterial] = useState(0);
-  const [materialCost, setMaterialCost] = useState("");
+  const [materialPrice, setMaterialPrice] = useState("");
   const [mitreSqft, setMitreSqft] = useState("");
 
   const area = parseFloat(sqft) || 0;
   const mitreArea = parseFloat(mitreSqft) || 0;
-  const matCost = parseFloat(materialCost) || 0;
+  const matPrice = parseFloat(materialPrice) || 0;
   const multiplier = materialOptions[material].multiplier;
 
-  const materialTotal = matCost * multiplier;
+  const materialTotal = matPrice * area * multiplier;
   const fabrication = area * FAB_RATE;
   const installation = area * INSTALL_RATE;
   const mitring = mitreArea * MITRE_RATE;
@@ -78,15 +78,15 @@ export default function App() {
 
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-1.5">
-              Material Cost ($)
+              Material Price ($ per sq ft)
             </label>
             <div className="relative">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">$</span>
               <input
                 type="number"
                 min="0"
-                value={materialCost}
-                onChange={(e) => setMaterialCost(e.target.value)}
+                value={materialPrice}
+                onChange={(e) => setMaterialPrice(e.target.value)}
                 placeholder="0.00"
                 className="w-full bg-gray-800 border border-gray-700 rounded-lg pl-7 pr-3 py-2.5 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
@@ -114,7 +114,7 @@ export default function App() {
           </h2>
           <div className="space-y-2.5 text-sm">
             <Row
-              label={`Material (${fmt(matCost)} x ${multiplier.toFixed(2)})`}
+              label={`Material (${fmt(matPrice)}/sqft x ${area} sqft x ${multiplier.toFixed(2)})`}
               value={materialTotal}
               bold
             />
