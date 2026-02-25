@@ -52,8 +52,8 @@ const VENDOR_INFO = {
   },
   "Wilsonart / Metro": {
     name: "Wilsonart — Denver", phone: "(720) 824-5300", address: "525 E 58th Ave Suite 300, Denver, CO 80216",
-    src: "margin_calc",
-    srcMsg: "Price per square foot was calculated from the vendor's internal cost spreadsheet using the Denver location sell margin (35%). Neither the price sheet nor the price card publishes a direct $/SF or slab price — call the vendor to confirm current pricing before finalizing any quote.",
+    src: "psf",
+    srcMsg: "Pricing listed directly on the Wilsonart Denver price card (Effective 03.17.2025). $/SF and slab prices are published by the vendor — no calculation or markup applied. Slab prices vary by color size; see each entry for its specific published slab dimensions and price.",
   },
 };
 
@@ -860,91 +860,97 @@ const GRANITE_IMPORTS = [
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
-// WILSONART / METRO  — Denver, 2025 Pricing
-// 3cm only. Exact slab sizes from price card spreadsheet.
-// Per-SF sell prices computed at L1 Denver margin (35%).
+// WILSONART / METRO  — Denver, Effective 03.17.2025
+// 3cm only. $/SF and slab prices published directly on Denver price card.
+// Slab sizes vary by color — each entry has its exact published dimensions.
 // ─────────────────────────────────────────────────────────────────────────────
 const WILSONART = [
-  // ─── GROUP 1 — $27.66/sf  3cm ───
-  {n:"Bodega (Q1022) — Group 1",c:"Quartz",p:27.66,sf:53.38,dim:"61x126"},
-  {n:"Cloudbreak (Q4093) — Group 1",c:"Quartz",p:27.66,sf:53.38,dim:"61x126"},
-  {n:"Lazio (Q1018) — Group 1",c:"Quartz",p:27.66,sf:53.38,dim:"61x126"},
-  {n:"Lorraine (Q1012) — Group 1",c:"Quartz",p:27.66,sf:53.38,dim:"61x126"},
-  {n:"Niwa (Q1002) — Group 1",c:"Quartz",p:27.66,sf:53.38,dim:"61x126"},
-  {n:"Permian Slate (Q4095) — Group 1",c:"Quartz",p:27.66,sf:53.38,dim:"61x126"},
-  {n:"Polar Veil (Q4084) — Group 1",c:"Quartz",p:27.66,sf:53.38,dim:"61x126"},
-  {n:"Trail Ridge (Q4042) — Group 1",c:"Quartz",p:27.66,sf:53.38,dim:"61x126"},
-  {n:"Vienna Canyon (Q4083) — Group 1",c:"Quartz",p:27.66,sf:53.38,dim:"61x126"},
-  // ─── GROUP 2 — $31.97/sf  3cm ───
-  {n:"Bregava (Q4096) — Group 2",c:"Quartz",p:31.97,sf:53.38,dim:"61x126"},
-  {n:"Calacatta Forte (Q4087) — Group 2",c:"Quartz",p:31.97,sf:58.68,dim:"65x130"},
-  {n:"Carrara Codena (Q6022) — Group 2",c:"Quartz",p:31.97,sf:53.38,dim:"61x126"},
-  {n:"Danum Valley (Q4086) — Group 2",c:"Quartz",p:31.97,sf:53.38,dim:"61x126"},
-  {n:"Desert View (Q4043) — Group 2",c:"Quartz",p:31.97,sf:53.38,dim:"61x126"},
-  {n:"Grey Lake (Q1009) — Group 2",c:"Quartz",p:31.97,sf:53.38,dim:"61x126"},
-  {n:"Hanola Grey (Q4044) — Group 2",c:"Quartz",p:31.97,sf:53.38,dim:"61x126"},
-  {n:"Lyra (Q2001) — Group 2",c:"Quartz",p:31.97,sf:53.38,dim:"61x126"},
-  {n:"Mountain Carrara (Q6021) — Group 2",c:"Quartz",p:31.97,sf:53.38,dim:"61x126"},
-  {n:"North Cliff (Q4085) — Group 2",c:"Quartz",p:31.97,sf:53.38,dim:"61x126"},
-  {n:"Pompeii (Q1007) — Group 2",c:"Quartz",p:31.97,sf:53.38,dim:"61x126"},
-  {n:"Rio Upano (Q3008) — Group 2",c:"Quartz",p:31.97,sf:53.38,dim:"61x126"},
-  {n:"Savannah Drift (Q4092) — Group 2",c:"Quartz",p:31.97,sf:53.38,dim:"61x126"},
-  {n:"Vesuvius (Q1017) — Group 2",c:"Quartz",p:31.97,sf:53.38,dim:"61x126"},
-  // ─── GROUP 3 — $36.94/sf  3cm ───
-  {n:"Arashi (Q4011) — Group 3",c:"Quartz",p:36.94,sf:53.38,dim:"61x126"},
-  {n:"Calacatta Aquilea (Q4056) — Group 3",c:"Quartz",p:36.94,sf:58.68,dim:"65x130"},
-  {n:"Calacatta Volegno (Q4057) — Group 3",c:"Quartz",p:36.94,sf:58.68,dim:"65x130"},
-  {n:"Clouds Rest (Q4049) — Group 3",c:"Quartz",p:36.94,sf:53.38,dim:"61x126"},
-  {n:"Haida (Q4008) — Group 3",c:"Quartz",p:36.94,sf:53.38,dim:"61x126"},
-  {n:"Hofn Harbour (Q4064) — Group 3",c:"Quartz",p:36.94,sf:53.38,dim:"61x126"},
-  {n:"Icelandic Mist (Q4097) — Group 3",c:"Quartz",p:36.94,sf:58.68,dim:"65x130"},
-  {n:"Kolams (Q4009) — Group 3",c:"Quartz",p:36.94,sf:53.38,dim:"61x126"},
-  {n:"Logan Pass (Q4055) — Group 3",c:"Quartz",p:36.94,sf:56.44,dim:"64.5x126"},
-  {n:"Madeira Beach (Q4054) — Group 3",c:"Quartz",p:36.94,sf:56.44,dim:"64.5x126"},
-  {n:"Marble Falls (Q4033) — Group 3",c:"Quartz",p:36.94,sf:55.13,dim:"63x126"},
-  {n:"River Glen (Q4053) — Group 3",c:"Quartz",p:36.94,sf:56.44,dim:"64.5x126"},
-  {n:"Sea Ice (Q1024) — Group 3",c:"Quartz",p:36.94,sf:58.68,dim:"65x130"},
-  {n:"Serene (Q1001) — Group 3",c:"Quartz",p:36.94,sf:53.38,dim:"61x126"},
-  {n:"Svalbard (Q4047) — Group 3",c:"Quartz",p:36.94,sf:53.38,dim:"61x126"},
-  // ─── GROUP 4 — $42.85/sf  3cm ───
-  {n:"Arktos (Q4037) — Group 4",c:"Quartz",p:42.85,sf:58.68,dim:"65x130"},
-  {n:"Arlia (Q4081) — Group 4",c:"Quartz",p:42.85,sf:58.68,dim:"65x130"},
-  {n:"Capogrossi (Q4052) — Group 4",c:"Quartz",p:42.85,sf:56.44,dim:"64.5x126"},
-  {n:"Charcoal Peak (Q4094) — Group 4",c:"Quartz",p:42.85,sf:56.44,dim:"64.5x126"},
-  {n:"Desert Wind (Q4031) — Group 4",c:"Quartz",p:42.85,sf:58.68,dim:"65x130"},
-  {n:"Enchanted Rock (Q4041) — Group 4",c:"Quartz",p:42.85,sf:56.44,dim:"64.5x126"},
-  {n:"Haldi (Q4032) — Group 4",c:"Quartz",p:42.85,sf:58.68,dim:"65x130"},
-  {n:"Hekla Slope (Q4061) — Group 4",c:"Quartz",p:42.85,sf:56.0,dim:"64x126"},
-  {n:"Nova Serrana (Q4068) — Group 4",c:"Quartz",p:42.85,sf:58.68,dim:"65x130"},
-  {n:"Santiago (Q4023) — Group 4",c:"Quartz",p:42.85,sf:58.68,dim:"65x130"},
-  {n:"Tellaro (Q4025) — Group 4",c:"Quartz",p:42.85,sf:58.68,dim:"65x130"},
-  {n:"Vicentia (Q4063) — Group 4",c:"Quartz",p:42.85,sf:58.68,dim:"65x130"},
-  // ─── GROUP 5 — $52.48/sf  3cm ───
-  {n:"Altamonte (Q4074) — Group 5",c:"Quartz",p:52.48,sf:58.68,dim:"65x130"},
-  {n:"Calacatta Olympos (Q4067) — Group 5",c:"Quartz",p:52.48,sf:58.68,dim:"65x130"},
-  {n:"Calacatta Pastino (Q4058) — Group 5",c:"Quartz",p:52.48,sf:58.68,dim:"65x130"},
-  {n:"Calacatta Serchio (Q4059) — Group 5",c:"Quartz",p:52.48,sf:58.68,dim:"65x130"},
-  {n:"Coastal (Q4036) — Group 5",c:"Quartz",p:52.48,sf:58.68,dim:"65x130"},
-  {n:"Emerald Brook (Q4088) — Group 5",c:"Quartz",p:52.48,sf:58.68,dim:"65x130"},
-  {n:"Fossa Falls (Q4065) — Group 5",c:"Quartz",p:52.48,sf:58.68,dim:"65x130"},
-  {n:"Glencoe (Q4077) — Group 5",c:"Quartz",p:52.48,sf:58.68,dim:"65x130"},
-  {n:"Grayton Beach (Q4039) — Group 5",c:"Quartz",p:52.48,sf:58.68,dim:"65x130"},
-  {n:"Marathi Marble (Q4078) — Group 5",c:"Quartz",p:52.48,sf:58.68,dim:"65x130"},
-  {n:"Nevis Ridge (Q4075) — Group 5",c:"Quartz",p:52.48,sf:58.68,dim:"65x130"},
-  {n:"North Cascades (Q4035) — Group 5",c:"Quartz",p:52.48,sf:58.68,dim:"65x130"},
-  {n:"Ostler Peak (Q4079) — Group 5",c:"Quartz",p:52.48,sf:58.68,dim:"65x130"},
-  {n:"Sandswept Cove (Q4089) — Group 5",c:"Quartz",p:52.48,sf:58.68,dim:"65x130"},
-  {n:"Sapphire Rift (Q4091) — Group 5",c:"Quartz",p:52.48,sf:58.68,dim:"65x130"},
-  {n:"Terra Nova (Q4069) — Group 5",c:"Quartz",p:52.48,sf:58.68,dim:"65x130"},
-  {n:"Verde Peak (Q4076) — Group 5",c:"Quartz",p:52.48,sf:58.68,dim:"65x130"},
-  // ─── SELECT SERIES — $19.46/sf  3cm ───
-  {n:"Abilene (Q6017) — Select Group 1",c:"Quartz",p:19.46,sf:53.38,dim:"61x126"},
-  {n:"San Angelo (Q6025) — Select Group 1",c:"Quartz",p:19.46,sf:53.38,dim:"61x126"},
-  {n:"Terlingua (Q6024) — Select Group 1",c:"Quartz",p:19.46,sf:53.38,dim:"61x126"},
-  {n:"Glenrio (Q6026) — Select Group 2",c:"Quartz",p:21.23,sf:53.38,dim:"61x126"},
-  {n:"Marfa (Q6019) — Select Group 2",c:"Quartz",p:21.23,sf:53.38,dim:"61x126"},
-  {n:"Urban Cloud (Q6018) — Select Group 2",c:"Quartz",p:21.23,sf:53.38,dim:"61x126"},
-  {n:"Frozen (Q6023) — Select Group 3",c:"Quartz",p:25.58,sf:53.38,dim:"61x126"},
+  // ─── GROUP 1 — $27.66/sf, $1,477/slab — 3cm, 61x126 ───
+  {n:"Bodega (Q1022) — Group 1",c:"Quartz",p:27.66,sf:53.38,dim:"61x126",slabP:1477},
+  {n:"Cloudbreak (Q4093) — Group 1",c:"Quartz",p:27.66,sf:53.38,dim:"61x126",slabP:1477},
+  {n:"Lazio (Q1018) — Group 1",c:"Quartz",p:27.66,sf:53.38,dim:"61x126",slabP:1477},
+  {n:"Lorraine (Q1012) — Group 1",c:"Quartz",p:27.66,sf:53.38,dim:"61x126",slabP:1477},
+  {n:"Niwa (Q1002) — Group 1",c:"Quartz",p:27.66,sf:53.38,dim:"61x126",slabP:1477},
+  {n:"Permian Slate (Q4095) — Group 1",c:"Quartz",p:27.66,sf:53.38,dim:"61x126",slabP:1477},
+  {n:"Polar Veil (Q4084) — Group 1",c:"Quartz",p:27.66,sf:53.38,dim:"61x126",slabP:1477},
+  {n:"Trail Ridge (Q4042) — Group 1",c:"Quartz",p:27.66,sf:53.38,dim:"61x126",slabP:1477},
+  {n:"Vienna Canyon (Q4083) — Group 1",c:"Quartz",p:27.66,sf:53.38,dim:"61x126",slabP:1477},
+  // ─── GROUP 2 — $31.97/sf — 3cm ───
+  {n:"Bregava (Q4096) — Group 2",c:"Quartz",p:31.97,sf:53.38,dim:"61x126",slabP:1707},
+  {n:"Calacatta Forte (Q4087) — Group 2",c:"Quartz",p:31.97,sf:58.68,dim:"65x130",slabP:1876},
+  {n:"Carrara Codena (Q6022) — Group 2",c:"Quartz",p:31.97,sf:53.38,dim:"61x126",slabP:1707},
+  {n:"Danum Valley (Q4086) — Group 2",c:"Quartz",p:31.97,sf:53.38,dim:"61x126",slabP:1707},
+  {n:"Desert View (Q4043) — Group 2",c:"Quartz",p:31.97,sf:53.38,dim:"61x126",slabP:1707},
+  {n:"Grey Lake (Q1009) — Group 2",c:"Quartz",p:31.97,sf:53.38,dim:"61x126",slabP:1707},
+  {n:"Hanola Grey (Q4044) — Group 2",c:"Quartz",p:31.97,sf:53.38,dim:"61x126",slabP:1707},
+  {n:"Lyra (Q2001) — Group 2",c:"Quartz",p:31.97,sf:53.38,dim:"61x126",slabP:1707},
+  {n:"Mountain Carrara (Q6021) — Group 2",c:"Quartz",p:31.97,sf:53.38,dim:"61x126",slabP:1707},
+  {n:"North Cliff (Q4085) — Group 2",c:"Quartz",p:31.97,sf:53.38,dim:"61x126",slabP:1707},
+  {n:"Pompeii (Q1007) — Group 2",c:"Quartz",p:31.97,sf:53.38,dim:"61x126",slabP:1707},
+  {n:"Rio Upano (Q3008) — Group 2",c:"Quartz",p:31.97,sf:53.38,dim:"61x126",slabP:1707},
+  {n:"Savannah Drift (Q4092) — Group 2",c:"Quartz",p:31.97,sf:53.38,dim:"61x126",slabP:1707},
+  {n:"Vesuvius (Q1017) — Group 2",c:"Quartz",p:31.97,sf:53.38,dim:"61x126",slabP:1707},
+  // ─── GROUP 3 — $36.94/sf — 3cm ───
+  // 61x126 (53.38 sf) — $1,972/slab
+  {n:"Arashi (Q4011) — Group 3",c:"Quartz",p:36.94,sf:53.38,dim:"61x126",slabP:1972},
+  {n:"Clouds Rest (Q4049) — Group 3",c:"Quartz",p:36.94,sf:53.38,dim:"61x126",slabP:1972},
+  {n:"Haida (Q4008) — Group 3",c:"Quartz",p:36.94,sf:53.38,dim:"61x126",slabP:1972},
+  {n:"Hofn Harbour (Q4064) — Group 3",c:"Quartz",p:36.94,sf:53.38,dim:"61x126",slabP:1972},
+  {n:"Kolams (Q4009) — Group 3",c:"Quartz",p:36.94,sf:53.38,dim:"61x126",slabP:1972},
+  {n:"Sea Ice (Q1024) — Group 3",c:"Quartz",p:36.94,sf:53.38,dim:"61x126",slabP:1972},
+  {n:"Serene (Q1001) — Group 3",c:"Quartz",p:36.94,sf:53.38,dim:"61x126",slabP:1972},
+  {n:"Svalbard (Q4047) — Group 3",c:"Quartz",p:36.94,sf:53.38,dim:"61x126",slabP:1972},
+  // 64.5x126 (56.44 sf) — $2,085/slab
+  {n:"Logan Pass (Q4055) — Group 3",c:"Quartz",p:36.94,sf:56.44,dim:"64.5x126",slabP:2085},
+  {n:"Madeira Beach (Q4054) — Group 3",c:"Quartz",p:36.94,sf:56.44,dim:"64.5x126",slabP:2085},
+  {n:"River Glen (Q4053) — Group 3",c:"Quartz",p:36.94,sf:56.44,dim:"64.5x126",slabP:2085},
+  // 65x130 (58.68 sf) — $2,168/slab
+  {n:"Calacatta Aquilea (Q4056) — Group 3",c:"Quartz",p:36.94,sf:58.68,dim:"65x130",slabP:2168},
+  {n:"Calacatta Volegno (Q4057) — Group 3",c:"Quartz",p:36.94,sf:58.68,dim:"65x130",slabP:2168},
+  {n:"Icelandic Mist (Q4097) — Group 3",c:"Quartz",p:36.94,sf:58.68,dim:"65x130",slabP:2168},
+  {n:"Marble Falls (Q4033) — Group 3",c:"Quartz",p:36.94,sf:58.68,dim:"65x130",slabP:2168},
+  // ─── GROUP 4 — $42.85/sf — 3cm ───
+  // 64.5x126 (56.44 sf) — $2,418/slab
+  {n:"Capogrossi (Q4052) — Group 4",c:"Quartz",p:42.85,sf:56.44,dim:"64.5x126",slabP:2418},
+  {n:"Charcoal Peak (Q4094) — Group 4",c:"Quartz",p:42.85,sf:56.44,dim:"64.5x126",slabP:2418},
+  {n:"Enchanted Rock (Q4041) — Group 4",c:"Quartz",p:42.85,sf:56.44,dim:"64.5x126",slabP:2418},
+  {n:"Hekla Slope (Q4061) — Group 4",c:"Quartz",p:42.85,sf:56.44,dim:"64.5x126",slabP:2418},
+  // 65x130 (58.68 sf) — $2,514/slab
+  {n:"Arktos (Q4037) — Group 4",c:"Quartz",p:42.85,sf:58.68,dim:"65x130",slabP:2514},
+  {n:"Arlia (Q4081) — Group 4",c:"Quartz",p:42.85,sf:58.68,dim:"65x130",slabP:2514},
+  {n:"Desert Wind (Q4031) — Group 4",c:"Quartz",p:42.85,sf:58.68,dim:"65x130",slabP:2514},
+  {n:"Haldi (Q4032) — Group 4",c:"Quartz",p:42.85,sf:58.68,dim:"65x130",slabP:2514},
+  {n:"Nova Serrana (Q4068) — Group 4",c:"Quartz",p:42.85,sf:58.68,dim:"65x130",slabP:2514},
+  {n:"Santiago (Q4023) — Group 4",c:"Quartz",p:42.85,sf:58.68,dim:"65x130",slabP:2514},
+  {n:"Tellaro (Q4025) — Group 4",c:"Quartz",p:42.85,sf:58.68,dim:"65x130",slabP:2514},
+  {n:"Vicentia (Q4063) — Group 4",c:"Quartz",p:42.85,sf:58.68,dim:"65x130",slabP:2514},
+  // ─── GROUP 5 — $52.48/sf, $3,079/slab — 3cm, 65x130 ───
+  {n:"Calacatta Olympos (Q4067) — Group 5",c:"Quartz",p:52.48,sf:58.68,dim:"65x130",slabP:3079},
+  {n:"Calacatta Pastino (Q4058) — Group 5",c:"Quartz",p:52.48,sf:58.68,dim:"65x130",slabP:3079},
+  {n:"Calacatta Serchio (Q4059) — Group 5",c:"Quartz",p:52.48,sf:58.68,dim:"65x130",slabP:3079},
+  {n:"Coastal (Q4036) — Group 5",c:"Quartz",p:52.48,sf:58.68,dim:"65x130",slabP:3079},
+  {n:"Emerald Brook (Q4088) — Group 5",c:"Quartz",p:52.48,sf:58.68,dim:"65x130",slabP:3079},
+  {n:"Fossa Falls (Q4065) — Group 5",c:"Quartz",p:52.48,sf:58.68,dim:"65x130",slabP:3079},
+  {n:"Grayton Beach (Q4039) — Group 5",c:"Quartz",p:52.48,sf:58.68,dim:"65x130",slabP:3079},
+  {n:"North Cascades (Q4035) — Group 5",c:"Quartz",p:52.48,sf:58.68,dim:"65x130",slabP:3079},
+  {n:"Sandswept Cove (Q4089) — Group 5",c:"Quartz",p:52.48,sf:58.68,dim:"65x130",slabP:3079},
+  {n:"Sapphire Rift (Q4091) — Group 5",c:"Quartz",p:52.48,sf:58.68,dim:"65x130",slabP:3079},
+  {n:"Terra Nova (Q4069) — Group 5",c:"Quartz",p:52.48,sf:58.68,dim:"65x130",slabP:3079},
+  // ─── GRAND SUMMIT COLLECTION — $52.48/sf, $3,079/slab — 3cm, 65x130 ───
+  {n:"Altamonte (Q4074) — Grand Summit",c:"Quartz",p:52.48,sf:58.68,dim:"65x130",slabP:3079},
+  {n:"Glencoe (Q4077) — Grand Summit",c:"Quartz",p:52.48,sf:58.68,dim:"65x130",slabP:3079},
+  {n:"Marathi Marble (Q4078) — Grand Summit",c:"Quartz",p:52.48,sf:58.68,dim:"65x130",slabP:3079},
+  {n:"Nevis Ridge (Q4075) — Grand Summit",c:"Quartz",p:52.48,sf:58.68,dim:"65x130",slabP:3079},
+  {n:"Ostler Peak (Q4079) — Grand Summit",c:"Quartz",p:52.48,sf:58.68,dim:"65x130",slabP:3079},
+  {n:"Verde Peak (Q4076) — Grand Summit",c:"Quartz",p:52.48,sf:58.68,dim:"65x130",slabP:3079},
+  // ─── SELECT SERIES — 3cm, 61x126 ───
+  {n:"Abilene (Q6017) — Select Group 1",c:"Quartz",p:19.46,sf:53.38,dim:"61x126",slabP:1039},
+  {n:"San Angelo (Q6025) — Select Group 1",c:"Quartz",p:19.46,sf:53.38,dim:"61x126",slabP:1039},
+  {n:"Terlingua (Q6024) — Select Group 1",c:"Quartz",p:19.46,sf:53.38,dim:"61x126",slabP:1039},
+  {n:"Glenrio (Q6026) — Select Group 2",c:"Quartz",p:21.23,sf:53.38,dim:"61x126",slabP:1133},
+  {n:"Marfa (Q6019) — Select Group 2",c:"Quartz",p:21.23,sf:53.38,dim:"61x126",slabP:1133},
+  {n:"Urban Cloud (Q6018) — Select Group 2",c:"Quartz",p:21.23,sf:53.38,dim:"61x126",slabP:1133},
+  {n:"Frozen (Q6023) — Select Group 3",c:"Quartz",p:25.58,sf:53.38,dim:"61x126",slabP:1365},
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1005,6 +1011,9 @@ export default function App() {
 
   const [discounts, setDiscounts] = useState([]);
 
+  const [areaLabel, setAreaLabel] = useState("");
+  const [areas, setAreas] = useState([]);
+
   const [vendor, setVendor] = useState("All Vendors");
   const [search, setSearch] = useState("");
   const [catFilter, setCatFilter] = useState("All");
@@ -1024,12 +1033,15 @@ export default function App() {
   const installation = area * inst;
   const cutoutTotal = hasCutouts ? coQty * coPrice : 0;
   const addonsTotal = addons.reduce((s, a) => s + ((parseFloat(a.qty) || 0) * (parseFloat(a.price) || 0)), 0);
-  const subtotal = materialTotal + fabrication + installation + cutoutTotal + addonsTotal;
 
+  // subtotal and total computed after allAreasMaterialTotal/totalSqft are available (below)
   const discountsTotal = discounts.reduce((s, d) => {
     const v = parseFloat(d.value) || 0;
-    return s + (d.type === "%" ? subtotal * (v / 100) : v);
+    const sub = totalMaterialCost + (totalSqft * fab) + (totalSqft * inst) + cutoutTotal + addonsTotal;
+    return s + (d.type === "%" ? sub * (v / 100) : v);
   }, 0);
+  // placeholder — real subtotal computed after helpers
+  const subtotal = totalMaterialCost + (totalSqft * fab) + (totalSqft * inst) + cutoutTotal + addonsTotal;
   const total = Math.max(0, subtotal - discountsTotal);
 
   const slabCount = slabSize > 0 && area > 0 ? Math.ceil(area / slabSize) : 0;
@@ -1057,6 +1069,42 @@ export default function App() {
   function updateDiscount(id, field, val) { setDiscounts(discounts.map(d => d.id === id ? { ...d, [field]: val } : d)); }
   function resetRate(setter, def) { setter(String(def)); }
 
+  function addArea() {
+    if (!sqft || !materialPrice) return;
+    setAreas([...areas, {
+      id: uid(),
+      label: areaLabel.trim() || `Area ${areas.length + 1}`,
+      sqft: parseFloat(sqft) || 0,
+      materialType: material,
+      materialName: selectedName,
+      materialVendor: selectedVendor,
+      materialPrice: parseFloat(materialPrice) || 0,
+      slabSf: parseFloat(slabSf) || 0,
+      slabDim: slabDim,
+      slabP: selectedSlabP,
+      est: selectedEst,
+    }]);
+    // reset form for next area
+    setAreaLabel("");
+    setSqft("");
+    setMaterialPrice("");
+    setSlabSf("");
+    setSlabDim("");
+    setSelectedName("");
+    setSelectedVendor("");
+    setSelectedEst(false);
+    setSelectedNote("");
+    setSelectedSlabP(null);
+    setMaterial(0);
+  }
+  function removeArea(id) { setAreas(areas.filter(a => a.id !== id)); }
+
+  // totals across all saved areas + current area
+  const allAreasSqft = areas.reduce((s, a) => s + a.sqft, 0);
+  const allAreasMaterialTotal = areas.reduce((s, a) => s + (a.materialPrice * a.sqft * materialOptions[a.materialType].multiplier), 0);
+  const totalSqft = allAreasSqft + area;
+  const totalMaterialCost = allAreasMaterialTotal + materialTotal;
+
   const inp = "w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2.5 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500";
   const inpSm = "w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500";
 
@@ -1083,6 +1131,12 @@ export default function App() {
                 </button>
               ))}
             </div>
+          </Field>
+
+          <Field label="Area Label (optional)">
+            <input type="text" value={areaLabel} onChange={e => setAreaLabel(e.target.value)}
+              placeholder="e.g. Kitchen, Master Bath, Island…"
+              className={inp} />
           </Field>
 
           <Field label="Material Price ($ per sq ft)">
@@ -1199,11 +1253,13 @@ export default function App() {
                     setSelectedEst(!!item.est);
                     setSelectedNote(item.note || "");
                     setSelectedSlabP(item.slabP || null);
-                    setShowLookup(false);
                   }}
-                    className={`w-full flex items-center justify-between border rounded-lg px-3 py-2 text-left transition-all ${item.est
-                      ? "bg-amber-950 border-amber-700 hover:border-amber-500"
-                      : "bg-gray-800 border-gray-700 hover:border-blue-600"}`}>
+                    className={`w-full flex items-center justify-between border rounded-lg px-3 py-2 text-left transition-all ${
+                      item.n === selectedName && itemVendor === selectedVendor
+                        ? "bg-blue-900 border-blue-500 ring-1 ring-blue-500"
+                        : item.est
+                          ? "bg-amber-950 border-amber-700 hover:border-amber-500"
+                          : "bg-gray-800 border-gray-700 hover:border-blue-600"}`}>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-1.5">
                         <span className="text-sm text-white font-medium truncate">{item.n}</span>
@@ -1227,6 +1283,57 @@ export default function App() {
             </div>
             <div className="text-xs text-amber-500 flex items-center gap-1">
               <span>⚠</span><span>est. = slab size is estimated — call vendor to confirm</span>
+            </div>
+          </div>
+        )}
+
+        {/* ── ADD AREA BUTTON ── */}
+        {sqft && materialPrice && (
+          <button onClick={addArea}
+            className="w-full py-3 rounded-xl text-sm font-semibold bg-blue-700 hover:bg-blue-600 text-white border border-blue-500 transition-all flex items-center justify-center gap-2">
+            <span className="text-lg leading-none">+</span>
+            Add Area to Estimate{areaLabel.trim() ? ` — ${areaLabel.trim()}` : ""}
+          </button>
+        )}
+
+        {/* ── SAVED AREAS ── */}
+        {areas.length > 0 && (
+          <div className="bg-gray-900 rounded-xl p-5 border border-gray-800 space-y-3">
+            <div className="flex items-center justify-between">
+              <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wide">Areas in Estimate</h2>
+              <span className="text-xs text-gray-500">{areas.length} area{areas.length !== 1 ? "s" : ""} · {allAreasSqft.toFixed(1)} sf total</span>
+            </div>
+            {areas.map(a => {
+              const areaMat = a.materialPrice * a.sqft * materialOptions[a.materialType].multiplier;
+              const areaFab = a.sqft * (parseFloat(fabRate) || 0);
+              const areaInst = a.sqft * (parseFloat(instRate) || 0);
+              return (
+                <div key={a.id} className="bg-gray-800 rounded-lg p-3 border border-gray-700 flex items-start justify-between gap-2">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-sm font-semibold text-white">{a.label}</span>
+                      <span className="text-xs text-gray-400">{a.sqft} sf</span>
+                      <span className="text-xs text-gray-500">· {materialOptions[a.materialType].label}</span>
+                    </div>
+                    {a.materialName && <div className="text-xs text-blue-400 mt-0.5 truncate">{a.materialName}{a.materialVendor ? ` — ${a.materialVendor}` : ""}</div>}
+                    <div className="text-xs text-gray-500 mt-1">
+                      Material {fmt(areaMat)} · Fab {fmt(areaFab)} · Install {fmt(areaInst)}
+                    </div>
+                    {a.slabSf > 0 && (() => {
+                      const sc = Math.ceil(a.sqft / a.slabSf);
+                      return <div className="text-xs text-gray-500">{sc} slab{sc !== 1 ? "s" : ""} @ {a.slabDim}"</div>;
+                    })()}
+                  </div>
+                  <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                    <span className="text-sm font-bold text-green-400">{fmt(areaMat)}</span>
+                    <button onClick={() => removeArea(a.id)} className="text-red-400 hover:text-red-300 text-xs">Remove</button>
+                  </div>
+                </div>
+              );
+            })}
+            <div className="pt-2 border-t border-gray-700 flex justify-between items-center text-sm">
+              <span className="text-gray-400">Saved areas material total</span>
+              <span className="font-bold text-green-400">{fmt(allAreasMaterialTotal)}</span>
             </div>
           </div>
         )}
@@ -1357,15 +1464,25 @@ export default function App() {
         <div className="bg-gray-900 rounded-xl p-5 border border-gray-800">
           <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-3">Cost Breakdown</h2>
           <div className="space-y-2.5 text-sm">
-            {selectedName && (
-              <div className="mb-2">
-                <div className="text-xs text-blue-400">Material: {selectedName}</div>
-                {selectedVendor && <div className="text-xs text-gray-500">Vendor: {selectedVendor}</div>}
-              </div>
+            {/* saved areas */}
+            {areas.map(a => {
+              const areaMat = a.materialPrice * a.sqft * materialOptions[a.materialType].multiplier;
+              return <Row key={a.id} label={`${a.label} — ${a.materialName || materialOptions[a.materialType].label} (${fmt(a.materialPrice)}/sf × ${a.sqft} sf × ${materialOptions[a.materialType].multiplier.toFixed(2)})`} value={areaMat} bold />;
+            })}
+            {/* current area */}
+            {area > 0 && matPrice > 0 && (
+              <>
+                {selectedName && (
+                  <div className="mb-1">
+                    <div className="text-xs text-blue-400">{areaLabel.trim() || (areas.length > 0 ? `Area ${areas.length + 1}` : "")} {selectedName}</div>
+                    {selectedVendor && <div className="text-xs text-gray-500">Vendor: {selectedVendor}</div>}
+                  </div>
+                )}
+                <Row label={`${areaLabel.trim() || "Material"} (${fmt(matPrice)}/sf × ${area} sf × ${multiplier.toFixed(2)})`} value={materialTotal} bold />
+              </>
             )}
-            <Row label={`Material (${fmt(matPrice)}/sf × ${area} sf × ${multiplier.toFixed(2)})`} value={materialTotal} bold />
-            <Row label={`Fabrication (${area} sf × $${fab})`} value={fabrication} />
-            <Row label={`Installation (${area} sf × $${inst})`} value={installation} />
+            {totalSqft > 0 && <Row label={`Fabrication (${totalSqft} sf × $${fab})`} value={totalSqft * fab} />}
+            {totalSqft > 0 && <Row label={`Installation (${totalSqft} sf × $${inst})`} value={totalSqft * inst} />}
             {cutoutTotal > 0 && <Row label={`${cutoutDesc || "Cutouts"} (${coQty} × ${fmt(coPrice)})`} value={cutoutTotal} />}
             {addons.filter(a => (parseFloat(a.qty)||0) * (parseFloat(a.price)||0) > 0).map(a => (
               <Row key={a.id} label={`${a.name || "Add-on"} (${a.qty} × ${fmt(parseFloat(a.price)||0)})`} value={(parseFloat(a.qty)||0) * (parseFloat(a.price)||0)} />
@@ -1381,6 +1498,9 @@ export default function App() {
               );
             })}
             <div className="border-t border-gray-700 pt-3 mt-3">
+              {totalSqft > 0 && (
+                <div className="text-xs text-gray-500 mb-2">{totalSqft.toFixed(1)} sq ft total across {areas.length + (area > 0 ? 1 : 0)} area{areas.length + (area > 0 ? 1 : 0) !== 1 ? "s" : ""}</div>
+              )}
               <div className="flex justify-between items-center">
                 <span className="text-lg font-bold text-white">Estimate Total</span>
                 <span className="text-2xl font-bold text-green-400">{fmt(total)}</span>
