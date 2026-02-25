@@ -1220,7 +1220,7 @@ export default function App() {
     const MAX_W = 300;
     const MAX_H = 200;
     const SVG_MAX_W = 620;
-    const LABEL_H = 18; // height reserved above each shape for its name
+    const LABEL_H = 10; // top padding above each shape
 
     // Build shape layout — wrap to new row if too wide
     const rows = [[]];
@@ -1254,7 +1254,7 @@ export default function App() {
         svgShapes.push({ ...s, x: curX, y: curY + LABEL_H });
         curX += s.w + PAD_X;
       });
-      curY += rowH + LABEL_H + PAD_Y;
+      curY += rowH + 45 + PAD_Y; // 45px below shape for label + bottom measurement
     });
 
     const svgH = curY;
@@ -1262,11 +1262,11 @@ export default function App() {
 
     const rects = svgShapes.map(s => `
       <rect x="${s.x}" y="${s.y}" width="${s.w}" height="${s.h}" fill="#1e3a5f" stroke="#60a5fa" stroke-width="2" rx="2"/>
-      <text x="${s.x + s.w/2}" y="${s.y - 6}" text-anchor="middle" fill="white" font-size="11" font-family="Arial" font-weight="bold">${s.label}</text>
-      ${s.topIn ? `<text x="${s.x + s.w/2}" y="${s.y - 20}" text-anchor="middle" fill="#93c5fd" font-size="9" font-family="Arial">${s.topIn}"</text>` : ""}
-      ${s.rightIn ? `<text x="${s.x + s.w + 6}" y="${s.y + s.h/2}" dominant-baseline="middle" fill="#93c5fd" font-size="9" font-family="Arial">${s.rightIn}"</text>` : ""}
-      ${s.bottomIn ? `<text x="${s.x + s.w/2}" y="${s.y + s.h + 13}" text-anchor="middle" fill="#93c5fd" font-size="9" font-family="Arial">${s.bottomIn}"</text>` : ""}
-      ${s.leftIn ? `<text x="${s.x - 6}" y="${s.y + s.h/2}" text-anchor="end" dominant-baseline="middle" fill="#93c5fd" font-size="9" font-family="Arial">${s.leftIn}"</text>` : ""}
+      ${s.topIn ? `<text x="${s.x + s.w/2}" y="${s.y - 6}" text-anchor="middle" fill="#93c5fd" font-size="10" font-family="Arial">${s.topIn}"</text>` : ""}
+      ${s.rightIn ? `<text x="${s.x + s.w + 8}" y="${s.y + s.h/2}" dominant-baseline="middle" fill="#93c5fd" font-size="10" font-family="Arial">${s.rightIn}"</text>` : ""}
+      ${s.bottomIn ? `<text x="${s.x + s.w/2}" y="${s.y + s.h + 14}" text-anchor="middle" fill="#93c5fd" font-size="10" font-family="Arial">${s.bottomIn}"</text>` : ""}
+      ${s.leftIn ? `<text x="${s.x - 8}" y="${s.y + s.h/2}" text-anchor="end" dominant-baseline="middle" fill="#93c5fd" font-size="10" font-family="Arial">${s.leftIn}"</text>` : ""}
+      <text x="${s.x + s.w/2}" y="${s.y + s.h + 30}" text-anchor="middle" fill="white" font-size="12" font-family="Arial" font-weight="bold">${s.label}</text>
     `).join("");
 
     return `<svg xmlns="http://www.w3.org/2000/svg" width="${svgW}" height="${svgH}" style="background:#111827;border-radius:8px">${rects}</svg>`;
