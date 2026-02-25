@@ -1198,14 +1198,21 @@ export default function App() {
     setSketchSvg(null);
     setSketchAreaTotal(null);
     try {
+      // Strip data URL prefix if present e.g. "data:image/jpeg;base64,..."
       let mediaType = "image/jpeg";
-      if (base64.startsWith("iVBOR")) mediaType = "image/png";
-      else if (base64.startsWith("UklGR")) mediaType = "image/webp";
+      let rawBase64 = base64;
+      if (base64.startsWith("data:")) {
+        const match = base64.match(/^data:(image\/\w+);base64,(.+)$/);
+        if (match) { mediaType = match[1]; rawBase64 = match[2]; }
+      } else {
+        if (base64.startsWith("iVBOR")) mediaType = "image/png";
+        else if (base64.startsWith("UklGR")) mediaType = "image/webp";
+      }
 
       const res = await fetch("/api/analyze-sketch", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ base64, mediaType })
+        body: JSON.stringify({ base64: rawBase64, mediaType })
       });
       const parsed = await res.json();
       if (!res.ok) throw new Error(parsed.error || "API error");
