@@ -1021,6 +1021,15 @@ export default function App() {
   const [showNotes, setShowNotes] = useState(false);
   const [notes, setNotes] = useState([{ id: uid(), text: "" }]);
   const [notesPinned, setNotesPinned] = useState(false);
+  // ── Sketch upload state ──
+  const [showSketch, setShowSketch] = useState(false);
+  const [sketchImage, setSketchImage] = useState(null);
+  const [sketchLoading, setSketchLoading] = useState(false);
+  const [sketchShapes, setSketchShapes] = useState(null);
+  const [sketchError, setSketchError] = useState("");
+  const [sketchSvg, setSketchSvg] = useState(null);
+  const [sketchAreaTotal, setSketchAreaTotal] = useState(null);
+
   const [showCalc, setShowCalc] = useState(false);
   const [surfaces, setSurfaces] = useState([{ id: uid(), label: "", l: "", w: "" }]);
   const [calcTotal, setCalcTotal] = useState(null);
@@ -1181,6 +1190,117 @@ export default function App() {
   function addNote() { setNotes([...notes, { id: uid(), text: "" }]); }
   function removeNote(id) { setNotes(notes.filter(n => n.id !== id)); }
   function updateNote(id, val) { setNotes(notes.map(n => n.id === id ? { ...n, text: val } : n)); }
+
+  async function analyzeSketch(base64) {
+    setSketchLoading(true);
+    setSketchError("");
+    setSketchShapes(null);
+    setSketchSvg(null);
+    setSketchAreaTotal(null);
+    try {
+      let mediaType = "image/jpeg";
+      if (base64.startsWith("iVBOR")) mediaType = "image/png";
+      else if (base64.startsWith("UklGR")) mediaType = "image/webp";
+
+      const res = await fetch("/api/analyze-sketch", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ base64, mediaType })
+      });
+      const parsed = await res.json();
+      if (!res.ok) throw new Error(parsed.error || "API error");
+      setSketchShapes(parsed.shapes || []);
+    } catch(e) {
+      setSketchError("Could not read the sketch: " + (e.message || "Please try a clearer photo."));
+    }
+    setSketchLoading(false);
+  }
+
+  function generateSketchSvg(shapes) {
+    // Simple SVG generator — lay out shapes left to right
+    const PAD = 40;
+    const SCALE = 1.5; // pixels per inch (scaled down for display)
+    const MAX_W = 500;
+    let svgShapes = [];
+    let x = PAD;
+    let maxH = 0;
+    shapes.forEach((shape, si) => {
+      const sides = shape.sides || [];
+      const getInches = (label) => {
+        const s = sides.find(s => s.label.toLowerCase().includes(label.toLowerCase()));
+        return s ? (parseFloat(s.inches) || 0) : 0;
+      };
+      const w = Math.min((getInches("top") || getInches("bottom") || 60) * SCALE, MAX_W);
+      const h = Math.min((getInches("right") || getInches("left") || 26) * SCALE, 200);
+      const topIn = getInches("top") || getInches("bottom") || 0;
+      const rightIn = getInches("right") || getInches("left") || 0;
+      const bottomIn = getInches("bottom") || getInches("top") || 0;
+      const leftIn = getInches("left") || getInches("right") || 0;
+      if (x + w + PAD > 600) { x = PAD; }
+      svgShapes.push({ x, y: PAD, w, h, label: shape.label, topIn, rightIn, bottomIn, leftIn, si });
+      x += w + PAD * 2;
+      if (h > maxH) maxH = h;
+    });
+    const svgH = maxH + PAD * 4;
+    const svgW = Math.max(x, 300);
+    const rects = svgShapes.map(s => `
+      <rect x="${s.x}" y="${s.y}" width="${s.w}" height="${s.h}" fill="#1e3a5f" stroke="#60a5fa" stroke-width="2" rx="2"/>
+      <text x="${s.x + s.w/2}" y="${s.y + s.h/2}" text-anchor="middle" dominant-baseline="middle" fill="white" font-size="11" font-family="Arial" font-weight="bold">${s.label}</text>
+      ${s.topIn ? `<text x="${s.x + s.w/2}" y="${s.y - 8}" text-anchor="middle" fill="#93c5fd" font-size="10" font-family="Arial">${s.topIn}"</text>` : ""}
+      ${s.rightIn ? `<text x="${s.x + s.w + 8}" y="${s.y + s.h/2}" dominant-baseline="middle" fill="#93c5fd" font-size="10" font-family="Arial">${s.rightIn}"</text>` : ""}
+      ${s.bottomIn ? `<text x="${s.x + s.w/2}" y="${s.y + s.h + 14}" text-anchor="middle" fill="#93c5fd" font-size="10" font-family="Arial">${s.bottomIn}"</text>` : ""}
+      ${s.leftIn ? `<text x="${s.x - 8}" y="${s.y + s.h/2}" text-anchor="end" dominant-baseline="middle" fill="#93c5fd" font-size="10" font-family="Arial">${s.leftIn}"</text>` : ""}
+    `).join("");
+    return `<svg xmlns="http://www.w3.org/2000/svg" width="${svgW}" height="${svgH}" style="background:#111827;border-radius:8px">${rects}</svg>`;
+  }
+
+  function calcSketchArea(shapes) {
+    return shapes.reduce((total, shape) => {
+      const sides = shape.sides || [];
+      const getIn = (lbl) => {
+        const s = sides.find(s => s.label.toLowerCase().includes(lbl.toLowerCase()));
+        return parseFloat(s?.inches) || 0;
+      };
+      const w = getIn("top") || getIn("bottom") || 0;
+      const h = getIn("right") || getIn("left") || 0;
+      return total + (w * h) / 144;
+    }, 0);
+  }
+
+  function exportDxf(shapes) {
+    const NL = "\n";
+    const lines = [];
+    lines.push("0", "SECTION", "2", "ENTITIES");
+    let x = 0;
+    shapes.forEach(shape => {
+      const sides = shape.sides || [];
+      const getIn = (lbl) => {
+        const s = sides.find(s => s.label.toLowerCase().includes(lbl.toLowerCase()));
+        return parseFloat(s?.inches) || 0;
+      };
+      const w = getIn("top") || getIn("bottom") || 0;
+      const h = getIn("right") || getIn("left") || 0;
+      if (w && h) {
+        lines.push("0","LWPOLYLINE","8","0","90","4","70","1",
+          "10",String(x),"20","0",
+          "10",String(x+w),"20","0",
+          "10",String(x+w),"20",String(h),
+          "10",String(x),"20",String(h)
+        );
+        lines.push("0","TEXT","8","0",
+          "10",String(x+w/2),"20",String(h/2),"30","0","40","2","1",shape.label
+        );
+        x += w + 12;
+      }
+    });
+    lines.push("0","ENDSEC","0","EOF");
+    const dxf = lines.join(NL);
+    const blob = new Blob([dxf], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = "sketch.dxf"; a.click();
+    URL.revokeObjectURL(url);
+  }
 
   function addSurface() {
     if (surfaces.length < 10) setSurfaces([...surfaces, { id: uid(), label: "", l: "", w: "" }]);
@@ -1385,6 +1505,180 @@ export default function App() {
                 }`}>
                 {customerPinned ? "✓ Added to Cost Breakdown" : "Add to Cost Breakdown"}
               </button>
+            </div>
+          )}
+        </Section>
+
+        {/* ── SKETCH UPLOAD ── */}
+        <Section>
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium text-gray-300">Upload a sketch of the space?</span>
+            <div className="flex gap-2">
+              <button onClick={() => setShowSketch(true)}
+                className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${showSketch ? "bg-blue-600 text-white" : "bg-gray-800 text-gray-400 border border-gray-700 hover:border-blue-500"}`}>
+                Yes
+              </button>
+              <button onClick={() => { setShowSketch(false); setSketchImage(null); setSketchShapes(null); setSketchSvg(null); setSketchAreaTotal(null); setSketchError(""); }}
+                className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${!showSketch ? "bg-gray-600 text-white" : "bg-gray-800 text-gray-400 border border-gray-700 hover:border-gray-500"}`}>
+                No
+              </button>
+            </div>
+          </div>
+
+          {showSketch && (
+            <div className="space-y-4 pt-1">
+              <p className="text-xs text-gray-500">Take a photo of your hand-drawn sketch. Label each shape and write measurements on each side in inches. AI will read your drawing and ask you to verify each measurement before generating a clean digital version.</p>
+
+              {/* Upload */}
+              {!sketchImage && (
+                <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-600 rounded-xl cursor-pointer hover:border-blue-500 transition-all bg-gray-800 hover:bg-gray-750">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="w-8 h-8 text-gray-500 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                  <span className="text-sm text-gray-400">Tap to upload or take a photo</span>
+                  <span className="text-xs text-gray-600 mt-1">JPG, PNG, HEIC supported</span>
+                  <input type="file" accept="image/*" capture="environment" className="hidden" onChange={async e => {
+                    const file = e.target.files[0];
+                    if (!file) return;
+                    const reader = new FileReader();
+                    reader.onload = async ev => {
+                      const dataUrl = ev.target.result;
+                      setSketchImage(dataUrl);
+                      const base64 = dataUrl.split(",")[1];
+                      await analyzeSketch(base64);
+                    };
+                    reader.readAsDataURL(file);
+                  }} />
+                </label>
+              )}
+
+              {/* Preview uploaded image */}
+              {sketchImage && (
+                <div className="relative">
+                  <img src={sketchImage} alt="Uploaded sketch" className="w-full rounded-lg border border-gray-700 max-h-48 object-contain bg-gray-800" />
+                  <button onClick={() => { setSketchImage(null); setSketchShapes(null); setSketchSvg(null); setSketchAreaTotal(null); setSketchError(""); }}
+                    className="absolute top-2 right-2 bg-gray-900 text-red-400 rounded-full w-7 h-7 flex items-center justify-center text-lg font-bold border border-gray-700 hover:bg-red-900">&times;</button>
+                </div>
+              )}
+
+              {/* Loading */}
+              {sketchLoading && (
+                <div className="flex items-center gap-3 p-4 bg-gray-800 rounded-lg border border-gray-700">
+                  <div className="w-5 h-5 border-2 border-blue-400 border-t-transparent rounded-full animate-spin flex-shrink-0" />
+                  <span className="text-sm text-gray-300">AI is reading your sketch and extracting measurements…</span>
+                </div>
+              )}
+
+              {/* Error */}
+              {sketchError && (
+                <div className="p-3 bg-red-950 border border-red-700 rounded-lg text-sm text-red-300">{sketchError}</div>
+              )}
+
+              {/* Measurement verification */}
+              {sketchShapes && !sketchLoading && (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-semibold text-white">Verify Measurements</span>
+                    <span className="text-xs text-gray-500">— review and correct any values below</span>
+                  </div>
+
+                  {sketchShapes.map((shape, si) => (
+                    <div key={si} className="bg-gray-800 rounded-xl p-4 border border-gray-700 space-y-3">
+                      <div className="flex items-center gap-2">
+                        <input type="text" value={shape.label}
+                          onChange={e => {
+                            const updated = [...sketchShapes];
+                            updated[si] = { ...updated[si], label: e.target.value };
+                            setSketchShapes(updated);
+                          }}
+                          className="flex-1 bg-gray-700 border border-gray-600 rounded-lg px-3 py-1.5 text-white text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                        <button onClick={() => setSketchShapes(sketchShapes.filter((_, i) => i !== si))}
+                          className="text-red-400 hover:text-red-300 text-lg font-bold">&times;</button>
+                      </div>
+
+                      {shape.notes && <p className="text-xs text-amber-400 italic">{shape.notes}</p>}
+
+                      <div className="space-y-2">
+                        {(shape.sides || []).map((side, sdi) => (
+                          <div key={sdi} className="flex items-center gap-2">
+                            <span className="text-xs text-gray-400 w-16 flex-shrink-0">{side.label}</span>
+                            <div className="relative flex-1">
+                              <input type="number" min="0"
+                                value={side.inches === null ? "" : side.inches}
+                                onChange={e => {
+                                  const updated = [...sketchShapes];
+                                  const val = e.target.value === "" ? null : parseFloat(e.target.value);
+                                  updated[si].sides[sdi] = { ...updated[si].sides[sdi], inches: val, confident: true };
+                                  setSketchShapes(updated);
+                                }}
+                                placeholder="inches"
+                                className={`w-full bg-gray-700 border rounded-lg px-3 py-1.5 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                                  side.inches === null ? "border-red-600" : side.confident ? "border-green-600" : "border-amber-600"
+                                }`} />
+                              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 text-xs pointer-events-none">"</span>
+                            </div>
+                            <span className={`text-xs w-16 flex-shrink-0 ${side.inches === null ? "text-red-400" : side.confident ? "text-green-400" : "text-amber-400"}`}>
+                              {side.inches === null ? "✗ missing" : side.confident ? "✓ read" : "⚠ unsure"}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+
+                  <button onClick={() => setSketchShapes([...sketchShapes, { label: `Shape ${sketchShapes.length + 1}`, type: "rectangle", sides: [{ label: "Top", inches: null, confident: false }, { label: "Right", inches: null, confident: false }, { label: "Bottom", inches: null, confident: false }, { label: "Left", inches: null, confident: false }], notes: "" }])}
+                    className="px-3 py-1 rounded-lg text-xs font-medium bg-gray-800 text-blue-400 border border-gray-700 hover:border-blue-500">
+                    + Add Shape
+                  </button>
+
+                  {/* Legend */}
+                  <div className="flex gap-4 text-xs">
+                    <span className="text-green-400">✓ read — AI confident</span>
+                    <span className="text-amber-400">⚠ unsure — please verify</span>
+                    <span className="text-red-400">✗ missing — please enter</span>
+                  </div>
+
+                  <button onClick={() => {
+                    const missingAny = sketchShapes.some(s => s.sides.some(sd => sd.inches === null || sd.inches === ""));
+                    if (missingAny && !window.confirm("Some measurements are still missing. Generate anyway?")) return;
+                    const svg = generateSketchSvg(sketchShapes);
+                    const area = calcSketchArea(sketchShapes);
+                    setSketchSvg(svg);
+                    setSketchAreaTotal(ceil2(area));
+                  }}
+                    className="w-full py-3 rounded-xl text-sm font-semibold bg-blue-700 hover:bg-blue-600 text-white border border-blue-500 transition-all">
+                    ✏️ Generate Clean Drawing
+                  </button>
+                </div>
+              )}
+
+              {/* Generated SVG + actions */}
+              {sketchSvg && (
+                <div className="space-y-3">
+                  <div className="text-xs font-bold text-gray-400 uppercase tracking-wide">Generated Drawing</div>
+                  <div className="overflow-x-auto rounded-lg" dangerouslySetInnerHTML={{ __html: sketchSvg }} />
+
+                  <div className="flex items-center justify-between bg-gray-800 rounded-lg p-3 border border-green-700">
+                    <span className="text-sm text-gray-300">Total calculated area</span>
+                    <span className="text-lg font-bold text-green-400">{sketchAreaTotal?.toFixed(2)} sq ft</span>
+                  </div>
+
+                  <button onClick={() => {
+                    if (window.confirm(`Use ${sketchAreaTotal?.toFixed(2)} sq ft as the area for your estimate?`)) {
+                      setSqft(String(sketchAreaTotal));
+                    }
+                  }}
+                    className="w-full py-2.5 rounded-lg text-sm font-semibold bg-green-700 hover:bg-green-600 text-white border border-green-600 transition-all">
+                    Use {sketchAreaTotal?.toFixed(2)} sq ft in Estimate ↓
+                  </button>
+
+                  <button onClick={() => exportDxf(sketchShapes)}
+                    className="w-full py-2.5 rounded-lg text-sm font-semibold bg-gray-700 hover:bg-gray-600 text-white border border-gray-600 transition-all flex items-center justify-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                    Download DXF (AutoCAD)
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </Section>
