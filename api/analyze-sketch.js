@@ -9,9 +9,10 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: "No image data provided" });
   }
 
-  console.log("mediaType:", mediaType);
-  console.log("base64 length:", base64.length);
-  console.log("base64 prefix:", base64.substring(0, 30));
+  // Force JPEG for any unsupported format (HEIC, etc.)
+  // Anthropic only supports: image/jpeg, image/png, image/gif, image/webp
+  const supported = ["image/jpeg", "image/png", "image/gif", "image/webp"];
+  const safeMediaType = supported.includes(mediaType) ? mediaType : "image/jpeg";
 
   try {
     const response = await fetch("https://api.anthropic.com/v1/messages", {
@@ -32,7 +33,7 @@ export default async function handler(req, res) {
               type: "image",
               source: {
                 type: "base64",
-                media_type: mediaType || "image/jpeg",
+                media_type: safeMediaType,
                 data: base64
               }
             },
@@ -46,11 +47,9 @@ export default async function handler(req, res) {
     });
 
     const data = await response.json();
-    console.log("Anthropic status:", response.status);
-    console.log("Anthropic response:", JSON.stringify(data).substring(0, 500));
 
     if (!response.ok) {
-      return res.status(500).json({ error: data.error?.message || "API error", detail: data });
+      return res.status(500).json({ error: data.error?.message || "API error" });
     }
 
     const text = data.content?.[0]?.text || "";

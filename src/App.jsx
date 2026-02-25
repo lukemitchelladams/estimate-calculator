@@ -1198,21 +1198,11 @@ export default function App() {
     setSketchSvg(null);
     setSketchAreaTotal(null);
     try {
-      // Strip data URL prefix if present e.g. "data:image/jpeg;base64,..."
-      let mediaType = "image/jpeg";
-      let rawBase64 = base64;
-      if (base64.startsWith("data:")) {
-        const match = base64.match(/^data:(image\/\w+);base64,(.+)$/);
-        if (match) { mediaType = match[1]; rawBase64 = match[2]; }
-      } else {
-        if (base64.startsWith("iVBOR")) mediaType = "image/png";
-        else if (base64.startsWith("UklGR")) mediaType = "image/webp";
-      }
-
+      // Image is always converted to JPEG by the upload handler
       const res = await fetch("/api/analyze-sketch", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ base64: rawBase64, mediaType })
+        body: JSON.stringify({ base64, mediaType: "image/jpeg" })
       });
       const parsed = await res.json();
       if (!res.ok) throw new Error(parsed.error || "API error");
@@ -1547,12 +1537,21 @@ export default function App() {
                   <input type="file" accept="image/*" capture="environment" className="hidden" onChange={async e => {
                     const file = e.target.files[0];
                     if (!file) return;
+                    // Convert any format (including HEIC) to JPEG via canvas
                     const reader = new FileReader();
                     reader.onload = async ev => {
-                      const dataUrl = ev.target.result;
-                      setSketchImage(dataUrl);
-                      const base64 = dataUrl.split(",")[1];
-                      await analyzeSketch(base64);
+                      const img = new Image();
+                      img.onload = async () => {
+                        const canvas = document.createElement("canvas");
+                        canvas.width = img.width;
+                        canvas.height = img.height;
+                        canvas.getContext("2d").drawImage(img, 0, 0);
+                        const jpegDataUrl = canvas.toDataURL("image/jpeg", 0.92);
+                        setSketchImage(jpegDataUrl);
+                        const base64 = jpegDataUrl.split(",")[1];
+                        await analyzeSketch(base64);
+                      };
+                      img.src = ev.target.result;
                     };
                     reader.readAsDataURL(file);
                   }} />
