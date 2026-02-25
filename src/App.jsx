@@ -1214,40 +1214,61 @@ export default function App() {
   }
 
   function generateSketchSvg(shapes) {
-    // Simple SVG generator — lay out shapes left to right
-    const PAD = 40;
-    const SCALE = 1.5; // pixels per inch (scaled down for display)
-    const MAX_W = 500;
-    let svgShapes = [];
-    let x = PAD;
-    let maxH = 0;
-    shapes.forEach((shape, si) => {
+    const PAD_X = 50;   // horizontal padding between shapes
+    const PAD_Y = 55;   // top padding — room for label above each shape
+    const SCALE = 1.5;
+    const MAX_W = 300;
+    const MAX_H = 200;
+    const SVG_MAX_W = 620;
+    const LABEL_H = 18; // height reserved above each shape for its name
+
+    // Build shape layout — wrap to new row if too wide
+    const rows = [[]];
+    shapes.forEach((shape) => {
       const sides = shape.sides || [];
-      const getInches = (label) => {
-        const s = sides.find(s => s.label.toLowerCase().includes(label.toLowerCase()));
+      const getIn = (lbl) => {
+        const s = sides.find(s => s.label.toLowerCase().includes(lbl.toLowerCase()));
         return s ? (parseFloat(s.inches) || 0) : 0;
       };
-      const w = Math.min((getInches("top") || getInches("bottom") || 60) * SCALE, MAX_W);
-      const h = Math.min((getInches("right") || getInches("left") || 26) * SCALE, 200);
-      const topIn = getInches("top") || getInches("bottom") || 0;
-      const rightIn = getInches("right") || getInches("left") || 0;
-      const bottomIn = getInches("bottom") || getInches("top") || 0;
-      const leftIn = getInches("left") || getInches("right") || 0;
-      if (x + w + PAD > 600) { x = PAD; }
-      svgShapes.push({ x, y: PAD, w, h, label: shape.label, topIn, rightIn, bottomIn, leftIn, si });
-      x += w + PAD * 2;
-      if (h > maxH) maxH = h;
+      const wIn = getIn("top") || getIn("bottom") || 60;
+      const hIn = getIn("right") || getIn("left") || 26;
+      const w = Math.min(wIn * SCALE, MAX_W);
+      const h = Math.min(hIn * SCALE, MAX_H);
+      const topIn = getIn("top") || getIn("bottom") || 0;
+      const rightIn = getIn("right") || getIn("left") || 0;
+      const bottomIn = getIn("bottom") || getIn("top") || 0;
+      const leftIn = getIn("left") || getIn("right") || 0;
+      const last = rows[rows.length - 1];
+      const rowW = last.reduce((s, sh) => s + sh.w + PAD_X, PAD_X);
+      if (last.length > 0 && rowW + w + PAD_X > SVG_MAX_W) rows.push([]);
+      rows[rows.length - 1].push({ w, h, label: shape.label, topIn, rightIn, bottomIn, leftIn });
     });
-    const svgH = maxH + PAD * 4;
-    const svgW = Math.max(x, 300);
+
+    // Assign x/y positions
+    let svgShapes = [];
+    let curY = PAD_Y;
+    rows.forEach(row => {
+      const rowH = Math.max(...row.map(s => s.h));
+      let curX = PAD_X;
+      row.forEach(s => {
+        svgShapes.push({ ...s, x: curX, y: curY + LABEL_H });
+        curX += s.w + PAD_X;
+      });
+      curY += rowH + LABEL_H + PAD_Y;
+    });
+
+    const svgH = curY;
+    const svgW = Math.max(SVG_MAX_W, ...svgShapes.map(s => s.x + s.w + PAD_X));
+
     const rects = svgShapes.map(s => `
       <rect x="${s.x}" y="${s.y}" width="${s.w}" height="${s.h}" fill="#1e3a5f" stroke="#60a5fa" stroke-width="2" rx="2"/>
-      <text x="${s.x + s.w/2}" y="${s.y + s.h/2}" text-anchor="middle" dominant-baseline="middle" fill="white" font-size="11" font-family="Arial" font-weight="bold">${s.label}</text>
-      ${s.topIn ? `<text x="${s.x + s.w/2}" y="${s.y - 8}" text-anchor="middle" fill="#93c5fd" font-size="10" font-family="Arial">${s.topIn}"</text>` : ""}
-      ${s.rightIn ? `<text x="${s.x + s.w + 8}" y="${s.y + s.h/2}" dominant-baseline="middle" fill="#93c5fd" font-size="10" font-family="Arial">${s.rightIn}"</text>` : ""}
-      ${s.bottomIn ? `<text x="${s.x + s.w/2}" y="${s.y + s.h + 14}" text-anchor="middle" fill="#93c5fd" font-size="10" font-family="Arial">${s.bottomIn}"</text>` : ""}
-      ${s.leftIn ? `<text x="${s.x - 8}" y="${s.y + s.h/2}" text-anchor="end" dominant-baseline="middle" fill="#93c5fd" font-size="10" font-family="Arial">${s.leftIn}"</text>` : ""}
+      <text x="${s.x + s.w/2}" y="${s.y - 6}" text-anchor="middle" fill="white" font-size="11" font-family="Arial" font-weight="bold">${s.label}</text>
+      ${s.topIn ? `<text x="${s.x + s.w/2}" y="${s.y - 20}" text-anchor="middle" fill="#93c5fd" font-size="9" font-family="Arial">${s.topIn}"</text>` : ""}
+      ${s.rightIn ? `<text x="${s.x + s.w + 6}" y="${s.y + s.h/2}" dominant-baseline="middle" fill="#93c5fd" font-size="9" font-family="Arial">${s.rightIn}"</text>` : ""}
+      ${s.bottomIn ? `<text x="${s.x + s.w/2}" y="${s.y + s.h + 13}" text-anchor="middle" fill="#93c5fd" font-size="9" font-family="Arial">${s.bottomIn}"</text>` : ""}
+      ${s.leftIn ? `<text x="${s.x - 6}" y="${s.y + s.h/2}" text-anchor="end" dominant-baseline="middle" fill="#93c5fd" font-size="9" font-family="Arial">${s.leftIn}"</text>` : ""}
     `).join("");
+
     return `<svg xmlns="http://www.w3.org/2000/svg" width="${svgW}" height="${svgH}" style="background:#111827;border-radius:8px">${rects}</svg>`;
   }
 
