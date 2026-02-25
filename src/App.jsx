@@ -1130,6 +1130,9 @@ export default function App() {
       cutoutPrice,
       fabRate,
       instRate,
+      // snapshot sq ft calculator if it was used
+      calcSurfaces: calcTotal !== null ? JSON.parse(JSON.stringify(surfaces)) : null,
+      calcTotal: calcTotal,
     }]);
     // reset form for next area — keep rates, reset everything else
     setAreaLabel("");
@@ -1149,6 +1152,10 @@ export default function App() {
     setCutoutDesc("");
     setCutoutQty("");
     setCutoutPrice("200");
+    // reset calculator for next area
+    setSurfaces([{ id: uid(), label: "", l: "", w: "" }]);
+    setCalcTotal(null);
+    setShowCalc(false);
   }
   function removeArea(id) { setAreas(areas.filter(a => a.id !== id)); }
 
@@ -1459,15 +1466,7 @@ export default function App() {
                     className="w-full py-2 rounded-lg text-sm font-semibold bg-blue-700 hover:bg-blue-600 text-white border border-blue-500 transition-all">
                     Use This Area in Estimate ↓
                   </button>
-                  <div>
-                    <label className="block text-xs text-gray-400 mb-1">Label for this calculation (optional)</label>
-                    <input type="text" value={calcTitle} onChange={e => setCalcTitle(e.target.value)}
-                      placeholder="e.g. Kitchen countertops, Bathroom vanity…" className={inpSm} />
-                  </div>
-                  <button onClick={() => setCalcPinned(true)}
-                    className="w-full py-2 rounded-lg text-sm font-semibold bg-gray-700 hover:bg-gray-600 text-white border border-gray-600 transition-all">
-                    {calcPinned ? "✓ Added to Cost Breakdown" : "Add Measurement to Cost Breakdown"}
-                  </button>
+
                 </div>
               )}
             </div>
@@ -1881,6 +1880,21 @@ export default function App() {
                     <span className="text-xs text-gray-500">{a.sqft} sf · {materialOptions[a.materialType].label}</span>
                   </div>
                   {a.materialName && <div className="text-xs text-gray-500 mb-1.5">{a.materialName}{a.materialVendor ? ` — ${a.materialVendor}` : ""}</div>}
+                  {a.calcSurfaces && a.calcTotal !== null && (
+                    <div className="mb-2 bg-gray-800 rounded-lg p-2.5 border border-gray-700 space-y-1">
+                      <div className="text-xs font-semibold text-blue-400 mb-1">📐 Measurements</div>
+                      {a.calcSurfaces.filter(s => (parseFloat(s.l)||0) && (parseFloat(s.w)||0)).map((s, si) => (
+                        <div key={s.id} className="flex justify-between text-xs text-gray-400">
+                          <span>{s.label || `Surface ${si+1}`} ({s.l}" × {s.w}")</span>
+                          <span>{ceil2((parseFloat(s.l)||0)*(parseFloat(s.w)||0)/144).toFixed(2)} sf</span>
+                        </div>
+                      ))}
+                      <div className="flex justify-between text-xs font-semibold text-white border-t border-gray-600 pt-1 mt-1">
+                        <span>Total measured</span>
+                        <span>{ceil2(a.calcTotal).toFixed(2)} sf</span>
+                      </div>
+                    </div>
+                  )}
                   <div className="pl-2 space-y-1">
                     <Row label={`Material  ${fmt(a.materialPrice)}/sf × ${a.sqft} sf × ${materialOptions[a.materialType].multiplier.toFixed(2)}`} value={areaMat} bold />
                     <Row label={`Fabrication  $${aFab}/sf × ${a.sqft} sf`} value={areaFab} />
@@ -1983,28 +1997,6 @@ export default function App() {
                 </div>
               </div>
             </div>
-
-            {/* ── SQ FT CALC IN BREAKDOWN ── */}
-            {calcPinned && calcTotal !== null && (
-              <div className="pt-4 border-t border-gray-700 space-y-2">
-                <div className="text-xs font-bold text-blue-400 uppercase tracking-wide">
-                  Area Measurement{calcTitle.trim() ? ` — ${calcTitle.trim()}` : ""}
-                </div>
-                {surfaces.filter(s => (parseFloat(s.l)||0) && (parseFloat(s.w)||0)).map((s, idx) => {
-                  const sf = ceil2((parseFloat(s.l)||0) * (parseFloat(s.w)||0) / 144);
-                  return (
-                    <div key={s.id} className="flex justify-between text-xs text-gray-400 pl-2">
-                      <span>{s.label || `Surface ${idx+1}`} ({s.l}" × {s.w}")</span>
-                      <span>{sf.toFixed(2)} sf</span>
-                    </div>
-                  );
-                })}
-                <div className="flex justify-between text-sm font-semibold text-white pl-2 border-t border-gray-700 pt-1">
-                  <span>Total Measured Area</span>
-                  <span>{ceil2(calcTotal).toFixed(2)} sq ft</span>
-                </div>
-              </div>
-            )}
 
             {/* ── NOTES IN BREAKDOWN ── */}
             {notesPinned && notes.some(n => n.text.trim()) && (
