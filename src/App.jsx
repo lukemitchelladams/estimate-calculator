@@ -1548,15 +1548,29 @@ export default function App() {
                     if (!file) return;
                     const type = file.type.toLowerCase();
                     if (!["image/jpeg","image/jpg","image/png","image/webp"].includes(type)) {
-                      setSketchError("HEIC photos not supported. In your iPhone Photos app, tap Share → Save as JPEG, or take a screenshot of the drawing instead.");
+                      setSketchError("HEIC photos not supported. Take a screenshot of your drawing instead.");
                       return;
                     }
                     const reader = new FileReader();
                     reader.onload = async ev => {
-                      const dataUrl = ev.target.result;
-                      setSketchImage(dataUrl);
-                      const base64 = dataUrl.split(",")[1];
-                      await analyzeSketch(base64);
+                      // Resize to max 1200px and compress to keep under 4MB limit
+                      const img = new Image();
+                      img.onload = async () => {
+                        const MAX = 1200;
+                        let w = img.width, h = img.height;
+                        if (w > MAX || h > MAX) {
+                          if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
+                          else { w = Math.round(w * MAX / h); h = MAX; }
+                        }
+                        const canvas = document.createElement("canvas");
+                        canvas.width = w; canvas.height = h;
+                        canvas.getContext("2d").drawImage(img, 0, 0, w, h);
+                        const jpegDataUrl = canvas.toDataURL("image/jpeg", 0.85);
+                        setSketchImage(jpegDataUrl);
+                        const base64 = jpegDataUrl.split(",")[1];
+                        await analyzeSketch(base64);
+                      };
+                      img.src = ev.target.result;
                     };
                     reader.readAsDataURL(file);
                   }} />
