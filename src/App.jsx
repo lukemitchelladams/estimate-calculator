@@ -317,45 +317,209 @@ const PENTAL = [
 
 // ─────────────────────────────────────────────────────────────────────────────
 // MSI  — Colorado (CODE), Published January 2026
-// 3cm only. Prices = LOOSE per SF (single slab).
-// NOTE: Slab sizes vary by color within each group. The size shown is a typical
-// average for the group — actual size depends on the specific color chosen.
+// 3cm only. Prices = LOOSE per SF (single slab). Sizes published per color.
+// Per MSI T&C: sizes are approximate, may be up to 2" larger or smaller.
+// DISCONTINUED colors omitted. COMING SOON colors included and noted.
 // ─────────────────────────────────────────────────────────────────────────────
-const MSI_NOTE = "MSI slab sizes vary by color within each group. The dimensions shown are a typical average for this price group — the actual slab you order may differ. Call the vendor to confirm exact dimensions for the specific color you're quoting.";
-
 const MSI = [
-  {n:"Group 0 - 3cm",c:"Quartz",p:11.95,sf:76,dim:"~138x79",est:true,note:MSI_NOTE},
-  {n:"Group 1 - 3cm",c:"Quartz",p:13.50,sf:76,dim:"~138x79",est:true,note:MSI_NOTE},
-  {n:"Group 2 - 3cm",c:"Quartz",p:16.75,sf:76,dim:"~138x79",est:true,note:MSI_NOTE},
-  {n:"Group 3 - 3cm",c:"Quartz",p:19.95,sf:76,dim:"~138x79",est:true,note:MSI_NOTE},
-  {n:"Group 4 - 3cm",c:"Quartz",p:21.95,sf:76,dim:"~138x79",est:true,note:MSI_NOTE},
-  {n:"Group 5 - 3cm",c:"Quartz",p:24.50,sf:59,dim:"~130x65",est:true,note:MSI_NOTE},
-  {n:"Group 6 - 3cm",c:"Quartz",p:29.50,sf:56,dim:"~127x64",est:true,note:MSI_NOTE},
-  {n:"Group 7 - 3cm",c:"Quartz",p:33.85,sf:55,dim:"~126x63",est:true,note:MSI_NOTE},
-  {n:"Group 8 - 3cm",c:"Quartz",p:35.50,sf:55,dim:"~126x63",est:true,note:MSI_NOTE},
-  {n:"Group 9 - 3cm",c:"Quartz",p:37.50,sf:55,dim:"~126x63",est:true,note:MSI_NOTE},
+  // ─── GROUP 0 — $11.95/sf ───
+  {n:"Bianco Pepper",c:"Quartz",p:11.95,sf:56,dim:"127x64"},
+  {n:"Frost White",c:"Quartz",p:11.95,sf:77,dim:"139x80"},
+  {n:"Iced White",c:"Quartz",p:11.95,sf:76,dim:"138x79"},
+  {n:"Sparkling White",c:"Quartz",p:11.95,sf:76,dim:"138x79"},
+  // ─── GROUP 1 — $13.50/sf ───
+  {n:"Aruca White",c:"Quartz",p:13.50,sf:71,dim:"136x75"},
+  {n:"Bayshore Sand",c:"Quartz",p:13.50,sf:55,dim:"126x63"},
+  {n:"Iced Gray",c:"Quartz",p:13.50,sf:76,dim:"138x79"},
+  {n:"Macabo Gray",c:"Quartz",p:13.50,sf:56,dim:"127x63"},
+  {n:"Manhattan Gray",c:"Quartz",p:13.50,sf:76,dim:"138x79"},
+  {n:"Peppercorn White",c:"Quartz",p:13.50,sf:58,dim:"128x65"},
+  {n:"Snow White",c:"Quartz",p:13.50,sf:76,dim:"138x79"},
+  // ─── GROUP 2 — $16.75/sf ───
+  {n:"Alabaster Gold",c:"Quartz",p:16.75,sf:79,dim:"143x80"},
+  {n:"Alabaster White",c:"Quartz",p:16.75,sf:79,dim:"143x80"},
+  {n:"Arctic White",c:"Quartz",p:16.75,sf:76,dim:"138x79"},
+  {n:"Calacatta Alto",c:"Quartz",p:16.75,sf:56,dim:"127x64"},
+  {n:"Calacatta Belaros (NEW)",c:"Quartz",p:16.75,sf:80,dim:"140x82"},
+  {n:"Calacatta Duolina",c:"Quartz",p:16.75,sf:74,dim:"137x78"},
+  {n:"Calacatta Rusta (NEW)",c:"Quartz",p:16.75,sf:80,dim:"140x82"},
+  {n:"Carrara Breve",c:"Quartz",p:16.75,sf:75,dim:"137x79"},
+  {n:"Carrara Delphi",c:"Quartz",p:16.75,sf:76,dim:"138x79"},
+  {n:"Carrara Marmi",c:"Quartz",p:16.75,sf:71,dim:"130x79"},
+  {n:"Carrara Miksa",c:"Quartz",p:16.75,sf:76,dim:"138x79"},
+  {n:"Carrara Mist",c:"Quartz",p:16.75,sf:56,dim:"127x64"},
+  {n:"Carrara Morro",c:"Quartz",p:16.75,sf:76,dim:"136x80"},
+  {n:"Carrara Trigato",c:"Quartz",p:16.75,sf:76,dim:"136x80"},
+  {n:"Marfitaj (NEW)",c:"Quartz",p:16.75,sf:80,dim:"140x82"},
+  {n:"Meridian Gray",c:"Quartz",p:16.75,sf:71,dim:"130x79"},
+  {n:"Midnight Majesty",c:"Quartz",p:16.75,sf:51,dim:"122x60"},
+  {n:"New Calacatta Laza",c:"Quartz",p:16.75,sf:76,dim:"138x79"},
+  {n:"New Carrara Marmi",c:"Quartz",p:16.75,sf:60,dim:"131x66"},
+  {n:"Sparkling Black",c:"Quartz",p:16.75,sf:76,dim:"138x79"},
+  {n:"Stellar White",c:"Quartz",p:16.75,sf:58,dim:"128x65"},
+  // ─── GROUP 3 — $19.95/sf ───
+  {n:"Calacatta Bali",c:"Quartz",p:19.95,sf:56,dim:"127x63"},
+  {n:"Calacatta Classique Unbookmatched",c:"Quartz",p:19.95,sf:76,dim:"136x80"},
+  {n:"Calacatta Elysio",c:"Quartz",p:19.95,sf:80,dim:"140x82"},
+  {n:"Calacatta Idillio",c:"Quartz",p:19.95,sf:80,dim:"140x82"},
+  {n:"Calacatta Lavasa",c:"Quartz",p:19.95,sf:56,dim:"127x64"},
+  {n:"Calacatta Laza",c:"Quartz",p:19.95,sf:77,dim:"139x80"},
+  {n:"Calacatta Rivessa (COMING SOON)",c:"Quartz",p:19.95,sf:77,dim:"139x80"},
+  {n:"Calacatta Sierra",c:"Quartz",p:19.95,sf:58,dim:"128x65"},
+  {n:"Calacatta Ultra",c:"Quartz",p:19.95,sf:76,dim:"138x79"},
+  {n:"Calacatta Vicenza",c:"Quartz",p:19.95,sf:56,dim:"127x64"},
+  {n:"Calico White",c:"Quartz",p:19.95,sf:56,dim:"127x64"},
+  {n:"Carrara Lumos",c:"Quartz",p:19.95,sf:59,dim:"131x65"},
+  {n:"Cashmere Taj",c:"Quartz",p:19.95,sf:59,dim:"130x65"},
+  {n:"Fossil Gray",c:"Quartz",p:19.95,sf:71,dim:"130x79"},
+  {n:"Midnight Majesty Concrete",c:"Quartz",p:19.95,sf:51,dim:"122x60"},
+  {n:"Montclair White",c:"Quartz",p:19.95,sf:59,dim:"130x65"},
+  {n:"Premium Plus White",c:"Quartz",p:19.95,sf:76,dim:"136x80"},
+  {n:"Statuary Classique Unbookmatched",c:"Quartz",p:19.95,sf:56,dim:"127x64"},
+  // ─── GROUP 4 — $21.95/sf ───
+  {n:"Babylon Gray",c:"Quartz",p:21.95,sf:59,dim:"130x65"},
+  {n:"Blanca Arabescato",c:"Quartz",p:21.95,sf:59,dim:"130x65"},
+  {n:"Blanca Statuarietto",c:"Quartz",p:21.95,sf:59,dim:"130x65"},
+  {n:"Calacatta Adonia",c:"Quartz",p:21.95,sf:71,dim:"130x79"},
+  {n:"Calacatta Azulean",c:"Quartz",p:21.95,sf:56,dim:"127x64"},
+  {n:"Calacatta Botanica",c:"Quartz",p:21.95,sf:59,dim:"130x65"},
+  {n:"Calacatta Classique Bookmatched",c:"Quartz",p:21.95,sf:56,dim:"127x64"},
+  {n:"Calacatta Fioressa",c:"Quartz",p:21.95,sf:56,dim:"127x64"},
+  {n:"Calacatta Karmelo",c:"Quartz",p:21.95,sf:71,dim:"130x79"},
+  {n:"Calacatta Leon",c:"Quartz",p:21.95,sf:76,dim:"138x79"},
+  {n:"Calacatta Laza Bookmatched",c:"Quartz",p:21.95,sf:77,dim:"139x80"},
+  {n:"Calacatta Prado",c:"Quartz",p:21.95,sf:80,dim:"140x82"},
+  {n:"Calacatta Premata",c:"Quartz",p:21.95,sf:76,dim:"138x79"},
+  {n:"Calacatta Safyra",c:"Quartz",p:21.95,sf:80,dim:"140x82"},
+  {n:"Calacatta Trevi",c:"Quartz",p:21.95,sf:76,dim:"138x79"},
+  {n:"Fossil Gray Matte",c:"Quartz",p:21.95,sf:71,dim:"130x79"},
+  {n:"Gray Lagoon",c:"Quartz",p:21.95,sf:59,dim:"130x65"},
+  {n:"Marquina Midnight",c:"Quartz",p:21.95,sf:79,dim:"143x80"},
+  {n:"New Calacatta Laza Gold",c:"Quartz",p:21.95,sf:74,dim:"136x78"},
+  {n:"Soapstone Metropolis",c:"Quartz",p:21.95,sf:59,dim:"130x65"},
+  {n:"Soapstone Mist",c:"Quartz",p:21.95,sf:59,dim:"130x65"},
+  {n:"Statuary Classique Bookmatched",c:"Quartz",p:21.95,sf:56,dim:"127x64"},
+  // ─── GROUP 5 — $24.50/sf ───
+  {n:"Aurataj (NEW)",c:"Quartz",p:24.50,sf:77,dim:"139x80"},
+  {n:"Babylon Gray Concrete",c:"Quartz",p:24.50,sf:59,dim:"130x65"},
+  {n:"Calacatta Aidana (NEW)",c:"Quartz",p:24.50,sf:75,dim:"137x79"},
+  {n:"Calacatta Arno",c:"Quartz",p:24.50,sf:76,dim:"138x79"},
+  {n:"Calacatta Laza Grigio",c:"Quartz",p:24.50,sf:56,dim:"127x64"},
+  {n:"Calacatta Laza Oro",c:"Quartz",p:24.50,sf:77,dim:"139x80"},
+  {n:"Calacatta Monaco",c:"Quartz",p:24.50,sf:56,dim:"127x64"},
+  {n:"Chakra Beige",c:"Quartz",p:24.50,sf:59,dim:"130x65"},
+  {n:"Eroluna (NEW)",c:"Quartz",p:24.50,sf:59,dim:"130x65"},
+  {n:"Galant Gray",c:"Quartz",p:24.50,sf:59,dim:"130x65"},
+  {n:"Gray Lagoon Concrete",c:"Quartz",p:24.50,sf:59,dim:"130x65"},
+  {n:"Midnight Corvo",c:"Quartz",p:24.50,sf:59,dim:"130x65"},
+  {n:"Perla White",c:"Quartz",p:24.50,sf:51,dim:"122x60"},
+  {n:"Portico Cream",c:"Quartz",p:24.50,sf:59,dim:"130x65"},
+  {n:"Smoked Pearl",c:"Quartz",p:24.50,sf:59,dim:"130x65"},
+  {n:"Soapstone Metropolis Concrete",c:"Quartz",p:24.50,sf:59,dim:"130x65"},
+  {n:"Soapstone Mist Concrete",c:"Quartz",p:24.50,sf:59,dim:"130x65"},
+  // ─── GROUP 6 — $29.50/sf ───
+  {n:"Calacatta Delios",c:"Quartz",p:29.50,sf:59,dim:"130x65"},
+  {n:"Calacatta Jadira (COMING SOON)",c:"Quartz",p:29.50,sf:55,dim:"126x63"},
+  {n:"Calacatta Lumanyx",c:"Quartz",p:29.50,sf:56,dim:"127x64"},
+  {n:"Calacatta Valentin",c:"Quartz",p:29.50,sf:56,dim:"127x64"},
+  {n:"Calacatta Vernello (NEW)",c:"Quartz",p:29.50,sf:80,dim:"140x82"},
+  {n:"Travataj (NEW)",c:"Quartz",p:29.50,sf:75,dim:"137x79"},
+  // ─── GROUP 7 — $33.85/sf ───
+  {n:"Calacatta Abezzo Bookmatched",c:"Quartz",p:33.85,sf:80,dim:"140x82"},
+  {n:"Calacatta Cinela (NEW)",c:"Quartz",p:33.85,sf:55,dim:"127x63"},
+  {n:"Calacatta Goa",c:"Quartz",p:33.85,sf:59,dim:"130x65"},
+  {n:"Calacatta Izaro Bookmatched",c:"Quartz",p:33.85,sf:80,dim:"140x82"},
+  {n:"Calacatta Miraggio",c:"Quartz",p:33.85,sf:55,dim:"126x63"},
+  {n:"Calacatta Ocellio",c:"Quartz",p:33.85,sf:56,dim:"127x64"},
+  {n:"Calacatta Versailles",c:"Quartz",p:33.85,sf:56,dim:"127x64"},
+  {n:"Serataj (COMING SOON)",c:"Quartz",p:33.85,sf:80,dim:"140x82"},
+  // ─── GROUP 8 — $35.50/sf ───
+  {n:"Azurmatt",c:"Quartz",p:35.50,sf:75,dim:"137x79"},
+  {n:"Calacatta Miraggio Cielo",c:"Quartz",p:35.50,sf:55,dim:"126x63"},
+  {n:"Calacatta Miraggio Cove",c:"Quartz",p:35.50,sf:55,dim:"126x63"},
+  {n:"Calacatta Miraggio Duo",c:"Quartz",p:35.50,sf:55,dim:"126x63"},
+  {n:"Calacatta Miraggio Gold",c:"Quartz",p:35.50,sf:55,dim:"126x63"},
+  {n:"Calacatta Miraggio Lusso (NEW)",c:"Quartz",p:35.50,sf:55,dim:"126x63"},
+  {n:"Calacatta Miraggio Seaglass",c:"Quartz",p:35.50,sf:55,dim:"126x63"},
+  {n:"Calacatta Solessio Bookmatched",c:"Quartz",p:35.50,sf:56,dim:"127x64"},
+  {n:"Calacatta Viraldi",c:"Quartz",p:35.50,sf:75,dim:"137x79"},
+  {n:"LumaTaj",c:"Quartz",p:35.50,sf:75,dim:"137x79"},
+  // ─── GROUP 9 — $37.50/sf ───
+  {n:"Calacatta Miraggio Honed (COMING SOON)",c:"Quartz",p:37.50,sf:55,dim:"126x63"},
+  {n:"Calacatta Miraggio Cielo Honed (COMING SOON)",c:"Quartz",p:37.50,sf:55,dim:"126x63"},
+  {n:"Calacatta Miraggio Cove Honed (COMING SOON)",c:"Quartz",p:37.50,sf:55,dim:"126x63"},
+  {n:"Calacatta Miraggio Duo Honed (COMING SOON)",c:"Quartz",p:37.50,sf:55,dim:"126x63"},
+  {n:"Calacatta Miraggio Gold Honed (COMING SOON)",c:"Quartz",p:37.50,sf:55,dim:"126x63"},
+  // ─── Q PLUS — $28.99/sf (3cm loose) ───
+  {n:"Ivoritaj (NEW)",c:"Q Plus",p:28.99,sf:56,dim:"127x64"},
+  {n:"Ivoritaj Brushed (NEW)",c:"Q Plus",p:30.99,sf:56,dim:"127x64"},
+  {n:"Solitaj (NEW)",c:"Q Plus",p:28.99,sf:56,dim:"127x64"},
+  {n:"Solitaj Brushed (NEW)",c:"Q Plus",p:30.99,sf:56,dim:"127x64"},
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
-// HANSTONE QUARTZ  — Denver, January 15, 2026 (L2 pricing)
-// 3cm only. HanStone's price list gives TOTAL SLAB PRICES, not per-SF.
-// Per-SF here is calculated using a standard 61x126" slab (53.38 sf).
-// Actual dimensions vary by color — call to confirm before finalizing a quote.
+// HANSTONE QUARTZ  — Denver (ESI), January 15, 2026 (L2 pricing)
+// 3cm only. HanStone's price list gives TOTAL SLAB PRICE only — no $/SF published.
+// $/SF below is estimated using a standard 61x126" slab (53.38 sf).
+// slabP = actual published slab price from price sheet.
+// ** discontinued colors omitted entirely.
 // ─────────────────────────────────────────────────────────────────────────────
-const HANSTONE_NOTE = "HanStone's price list gives a total per-slab price, not a per-SF rate. The $/SF shown here was calculated using a standard 61×126\" slab (53.38 sf). Actual slab dimensions vary by color — call the vendor to confirm exact size before finalizing this quote.";
+const HANSTONE_NOTE = "HanStone's price list only provides a total per-slab price — price per square foot is not published. The $/SF shown here was estimated by dividing the slab price by a standard 61×126\" slab (53.38 sf). Actual slab dimensions vary by color. Call the vendor to get the exact slab size for the color you're quoting, then divide the slab price by actual sf for an accurate $/SF.";
 
 const HANSTONE = [
-  {n:"Group A - 3cm",c:"Quartz",p:16.72,sf:53.38,dim:"~61x126",est:true,note:HANSTONE_NOTE},
-  {n:"Group A1 - 3cm",c:"Quartz",p:18.39,sf:53.38,dim:"~61x126",est:true,note:HANSTONE_NOTE},
-  {n:"Group B - 3cm",c:"Quartz",p:20.95,sf:53.38,dim:"~61x126",est:true,note:HANSTONE_NOTE},
-  {n:"Group B1 - 3cm",c:"Quartz",p:22.94,sf:53.38,dim:"~61x126",est:true,note:HANSTONE_NOTE},
-  {n:"Group B2 - 3cm",c:"Quartz",p:23.13,sf:53.38,dim:"~61x126",est:true,note:HANSTONE_NOTE},
-  {n:"Group B3 - 3cm",c:"Quartz",p:25.35,sf:53.38,dim:"~61x126",est:true,note:HANSTONE_NOTE},
-  {n:"Group C - 3cm",c:"Quartz",p:26.84,sf:53.38,dim:"~61x126",est:true,note:HANSTONE_NOTE},
-  {n:"Group C1 - 3cm",c:"Quartz",p:29.42,sf:53.38,dim:"~61x126",est:true,note:HANSTONE_NOTE},
-  {n:"Group D - 3cm",c:"Quartz",p:29.22,sf:53.38,dim:"~61x126",est:true,note:HANSTONE_NOTE},
-  {n:"Group D1 - 3cm",c:"Quartz",p:32.04,sf:53.38,dim:"~61x126",est:true,note:HANSTONE_NOTE},
-  {n:"Group E - 3cm",c:"Quartz",p:40.04,sf:53.38,dim:"~61x126",est:true,note:HANSTONE_NOTE},
+  // ─── GROUP A — $892.52/slab ───
+  {n:"Blackburn (RS401)",c:"Quartz",p:16.72,sf:53.38,dim:"~61x126",est:true,note:HANSTONE_NOTE,slabP:892.52},
+  {n:"Fusion (MV623)",c:"Quartz",p:16.72,sf:53.38,dim:"~61x126",est:true,note:HANSTONE_NOTE,slabP:892.52},
+  {n:"Rocky Shores (RS463)",c:"Quartz",p:16.72,sf:53.38,dim:"~61x126",est:true,note:HANSTONE_NOTE,slabP:892.52},
+  // ─── GROUP A1 — $981.78/slab ───
+  {n:"Artisan Grey (RC104L)",c:"Quartz",p:18.39,sf:53.38,dim:"~61x126",est:true,note:HANSTONE_NOTE,slabP:981.78},
+  {n:"Aspen (RU601)",c:"Quartz",p:18.39,sf:53.38,dim:"~61x126",est:true,note:HANSTONE_NOTE,slabP:981.78},
+  {n:"Leaden (CC104)",c:"Quartz",p:18.39,sf:53.38,dim:"~61x126",est:true,note:HANSTONE_NOTE,slabP:981.78},
+  {n:"Specchio White (CT402)",c:"Quartz",p:18.39,sf:53.38,dim:"~61x126",est:true,note:HANSTONE_NOTE,slabP:981.78},
+  {n:"Tofino (CL119)",c:"Quartz",p:18.39,sf:53.38,dim:"~61x126",est:true,note:HANSTONE_NOTE,slabP:981.78},
+  // ─── GROUP B — $1,118.44/slab ───
+  {n:"Italian Waves (RU701)",c:"Quartz",p:20.95,sf:53.38,dim:"~61x126",est:true,note:HANSTONE_NOTE,slabP:1118.44},
+  {n:"Ridge (MV516)",c:"Quartz",p:20.95,sf:53.38,dim:"~61x126",est:true,note:HANSTONE_NOTE,slabP:1118.44},
+  {n:"Silhouette (MV628)",c:"Quartz",p:20.95,sf:53.38,dim:"~61x126",est:true,note:HANSTONE_NOTE,slabP:1118.44},
+  // ─── GROUP B1 — $1,224.68/slab ───
+  {n:"Calacatta Gold (BG812)",c:"Quartz",p:22.94,sf:53.38,dim:"~61x126",est:true,note:HANSTONE_NOTE,slabP:1224.68},
+  {n:"Drift (BA271)",c:"Quartz",p:22.94,sf:53.38,dim:"~61x126",est:true,note:HANSTONE_NOTE,slabP:1224.68},
+  {n:"Metropolitan (RU611)",c:"Quartz",p:22.94,sf:53.38,dim:"~61x126",est:true,note:HANSTONE_NOTE,slabP:1224.68},
+  {n:"Paros (MV548)",c:"Quartz",p:22.94,sf:53.38,dim:"~61x126",est:true,note:HANSTONE_NOTE,slabP:1224.68},
+  {n:"Uptown Grey (RU609)",c:"Quartz",p:22.94,sf:53.38,dim:"~61x126",est:true,note:HANSTONE_NOTE,slabP:1224.68},
+  {n:"Whistler (BA252)",c:"Quartz",p:22.94,sf:53.38,dim:"~61x126",est:true,note:HANSTONE_NOTE,slabP:1224.68},
+  {n:"Whistler Gold (BA253)",c:"Quartz",p:22.94,sf:53.38,dim:"~61x126",est:true,note:HANSTONE_NOTE,slabP:1224.68},
+  // ─── GROUP B2 — $1,234.96/slab ───
+  {n:"Coast (MV514)",c:"Quartz",p:23.13,sf:53.38,dim:"~61x126",est:true,note:HANSTONE_NOTE,slabP:1234.96},
+  {n:"Storm (MV513)",c:"Quartz",p:23.13,sf:53.38,dim:"~61x126",est:true,note:HANSTONE_NOTE,slabP:1234.96},
+  // ─── GROUP C — $1,432.97/slab ───
+  {n:"Antello (LO804)",c:"Quartz",p:26.84,sf:53.38,dim:"~61x126",est:true,note:HANSTONE_NOTE,slabP:1432.97},
+  {n:"Markina (LO805)",c:"Quartz",p:26.84,sf:53.38,dim:"~61x126",est:true,note:HANSTONE_NOTE,slabP:1432.97},
+  {n:"Markina Leathered (LO805L)",c:"Quartz",p:26.84,sf:53.38,dim:"~61x126",est:true,note:HANSTONE_NOTE,slabP:1432.97},
+  {n:"Oceana (MV529)",c:"Quartz",p:26.84,sf:53.38,dim:"~61x126",est:true,note:HANSTONE_NOTE,slabP:1432.97},
+  {n:"Tranquility (RU613)",c:"Quartz",p:26.84,sf:53.38,dim:"~61x126",est:true,note:HANSTONE_NOTE,slabP:1432.97},
+  // ─── GROUP C1 — $1,570.38/slab ───
+  {n:"Calacatta Venato (BG883)",c:"Quartz",p:29.42,sf:53.38,dim:"~61x126",est:true,note:HANSTONE_NOTE,slabP:1570.38},
+  {n:"Cremosa (K5408)",c:"Quartz",p:29.42,sf:53.38,dim:"~61x126",est:true,note:HANSTONE_NOTE,slabP:1570.38},
+  {n:"Cremosa Leathered (K5408L)",c:"Quartz",p:29.42,sf:53.38,dim:"~61x126",est:true,note:HANSTONE_NOTE,slabP:1570.38},
+  {n:"Eden (SK503)",c:"Quartz",p:29.42,sf:53.38,dim:"~61x126",est:true,note:HANSTONE_NOTE,slabP:1570.38},
+  {n:"Royal Blanc (BA205)",c:"Quartz",p:29.42,sf:53.38,dim:"~61x126",est:true,note:HANSTONE_NOTE,slabP:1570.38},
+  // ─── GROUP D — $1,559.71/slab ───
+  {n:"Aura (MV531)",c:"Quartz",p:29.22,sf:53.38,dim:"~61x126",est:true,note:HANSTONE_NOTE,slabP:1559.71},
+  {n:"Aurelia (CA821)",c:"Quartz",p:29.22,sf:53.38,dim:"~61x126",est:true,note:HANSTONE_NOTE,slabP:1559.71},
+  {n:"Chantilly (BG873)",c:"Quartz",p:29.22,sf:53.38,dim:"~61x126",est:true,note:HANSTONE_NOTE,slabP:1559.71},
+  {n:"Montauk (BG871)",c:"Quartz",p:29.22,sf:53.38,dim:"~61x126",est:true,note:HANSTONE_NOTE,slabP:1559.71},
+  {n:"Soho (BG872)",c:"Quartz",p:29.22,sf:53.38,dim:"~61x126",est:true,note:HANSTONE_NOTE,slabP:1559.71},
+  {n:"Strato (CA701)",c:"Quartz",p:29.22,sf:53.38,dim:"~61x126",est:true,note:HANSTONE_NOTE,slabP:1559.71},
+  // ─── GROUP D1 — $1,710.13/slab ───
+  {n:"Calacatta Extra (BG884)",c:"Quartz",p:32.04,sf:53.38,dim:"~61x126",est:true,note:HANSTONE_NOTE,slabP:1710.13},
+  {n:"Calacatta Mont (BG817)",c:"Quartz",p:32.04,sf:53.38,dim:"~61x126",est:true,note:HANSTONE_NOTE,slabP:1710.13},
+  // ─── GROUP E — $2,137.70/slab ───
+  {n:"Elba White (K5401)",c:"Quartz",p:40.04,sf:53.38,dim:"~61x126",est:true,note:HANSTONE_NOTE,slabP:2137.70},
+  {n:"Le Blanc (K5402)",c:"Quartz",p:40.04,sf:53.38,dim:"~61x126",est:true,note:HANSTONE_NOTE,slabP:2137.70},
+  {n:"Matterhorn (K5403)",c:"Quartz",p:40.04,sf:53.38,dim:"~61x126",est:true,note:HANSTONE_NOTE,slabP:2137.70},
+  {n:"Tahitian Cream (K5407)",c:"Quartz",p:40.04,sf:53.38,dim:"~61x126",est:true,note:HANSTONE_NOTE,slabP:2137.70},
+  {n:"Tahitian Cream Leathered (K5407L)",c:"Quartz",p:40.04,sf:53.38,dim:"~61x126",est:true,note:HANSTONE_NOTE,slabP:2137.70},
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -513,6 +677,7 @@ export default function App() {
   const [selectedVendor, setSelectedVendor] = useState("");
   const [selectedEst, setSelectedEst] = useState(false);
   const [selectedNote, setSelectedNote] = useState("");
+  const [selectedSlabP, setSelectedSlabP] = useState(null);
 
   const [fabRate, setFabRate] = useState(String(DEF_FAB));
   const [instRate, setInstRate] = useState(String(DEF_INST));
@@ -622,7 +787,7 @@ export default function App() {
           </Field>
 
           <Field label="Slab Size (sq ft per slab)">
-            <input type="number" min="0" value={slabSf} onChange={e => { setSlabSf(e.target.value); setSlabDim(""); setSelectedEst(false); setSelectedNote(""); }} placeholder="e.g. 53.38" className={inp} />
+            <input type="number" min="0" value={slabSf} onChange={e => { setSlabSf(e.target.value); setSlabDim(""); setSelectedEst(false); setSelectedNote(""); setSelectedSlabP(null); }} placeholder="e.g. 53.38" className={inp} />
             {slabDim && (
               <div className="mt-1.5 flex items-center gap-2">
                 <span className="text-xs text-gray-400">Slab dimensions:</span>
@@ -664,6 +829,12 @@ export default function App() {
                   <span className={`text-sm font-semibold ${headCls}`}>{headLabel}</span>
                 </div>
                 <p className={`text-xs leading-relaxed ${textCls}`}>{vendorContact.srcMsg}</p>
+                {selectedSlabP && (
+                  <div className={`flex items-center gap-2 text-xs font-medium ${textCls}`}>
+                    <span>📋</span>
+                    <span>Published slab price: <span className="font-bold">${selectedSlabP.toLocaleString("en-US", {minimumFractionDigits:2, maximumFractionDigits:2})}</span> per slab</span>
+                  </div>
+                )}
                 {selectedEst && selectedNote && (
                   <p className={`text-xs leading-relaxed ${textCls} pt-1`}>{selectedNote}</p>
                 )}
@@ -715,6 +886,7 @@ export default function App() {
                     setSelectedVendor(itemVendor);
                     setSelectedEst(!!item.est);
                     setSelectedNote(item.note || "");
+                    setSelectedSlabP(item.slabP || null);
                     setShowLookup(false);
                   }}
                     className={`w-full flex items-center justify-between border rounded-lg px-3 py-2 text-left transition-all ${item.est
@@ -734,7 +906,8 @@ export default function App() {
                     </div>
                     <div className="text-right ml-3 flex-shrink-0">
                       <div className="text-sm font-bold text-green-400">${item.p.toFixed(2)}</div>
-                      <div className="text-xs text-gray-500">per sf</div>
+                      <div className="text-xs text-gray-500">per sf (est.)</div>
+                      {item.slabP && <div className="text-xs text-amber-400">${item.slabP.toLocaleString()} /slab</div>}
                     </div>
                   </button>
                 );
