@@ -981,7 +981,8 @@ const materialOptions = [
   { label: "Marble", multiplier: 1.40 },
 ];
 
-function fmt(n) { return n.toLocaleString("en-US", { style: "currency", currency: "USD" }); }
+function fmt(n) { return n.toLocaleString("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+function ceil2(n) { return Math.ceil(n * 100) / 100; }
 let _id = 100;
 function uid() { return ++_id; }
 
@@ -1014,6 +1015,16 @@ export default function App() {
   const [areaLabel, setAreaLabel] = useState("");
   const [areas, setAreas] = useState([]);
 
+  const [showCustomer, setShowCustomer] = useState(false);
+  const [customer, setCustomer] = useState({ name: "", phone: "", email: "", address: "", rep: "" });
+  const [customerPinned, setCustomerPinned] = useState(false);
+  const [showNotes, setShowNotes] = useState(false);
+  const [notes, setNotes] = useState([{ id: uid(), text: "" }]);
+  const [notesPinned, setNotesPinned] = useState(false);
+  const [showCalc, setShowCalc] = useState(false);
+  const [surfaces, setSurfaces] = useState([{ id: uid(), label: "", l: "", w: "" }]);
+  const [calcTotal, setCalcTotal] = useState(null);
+
   const [vendor, setVendor] = useState("All Vendors");
   const [search, setSearch] = useState("");
   const [catFilter, setCatFilter] = useState("All");
@@ -1034,15 +1045,40 @@ export default function App() {
   const cutoutTotal = hasCutouts ? coQty * coPrice : 0;
   const addonsTotal = addons.reduce((s, a) => s + ((parseFloat(a.qty) || 0) * (parseFloat(a.price) || 0)), 0);
 
-  // subtotal and total computed after allAreasMaterialTotal/totalSqft are available (below)
+  // totals across all saved areas (each uses its own snapshotted rates/addons/discounts)
+  const allAreasSqft = areas.reduce((s, a) => s + a.sqft, 0);
+  const allAreasMaterialTotal = areas.reduce((s, a) => s + (a.materialPrice * a.sqft * materialOptions[a.materialType].multiplier), 0);
+  const totalSqft = allAreasSqft + area;
+  const totalMaterialCost = allAreasMaterialTotal + materialTotal;
+
+  // each saved area's full cost (mat + fab + inst + cutouts + addons - discounts)
+  const savedAreasTotal = areas.reduce((s, a) => {
+    const aFab = parseFloat(a.fabRate) || 0;
+    const aInst = parseFloat(a.instRate) || 0;
+    const aMat = a.materialPrice * a.sqft * materialOptions[a.materialType].multiplier;
+    const aFabCost = a.sqft * aFab;
+    const aInstCost = a.sqft * aInst;
+    const aCutQty = parseInt(a.cutoutQty) || 0;
+    const aCutPrice = parseFloat(a.cutoutPrice) || 0;
+    const aCut = a.hasCutouts ? aCutQty * aCutPrice : 0;
+    const aAdd = (a.addons || []).reduce((x, ad) => x + (parseFloat(ad.qty)||0)*(parseFloat(ad.price)||0), 0);
+    const aBase = aMat + aFabCost + aInstCost + aCut + aAdd;
+    const aDisc = (a.discounts || []).reduce((x, d) => {
+      const v = parseFloat(d.value)||0;
+      return x + (d.type === "%" ? aBase*(v/100) : v);
+    }, 0);
+    return s + Math.max(0, aBase - aDisc);
+  }, 0);
+
+  // current (unsaved) area cost
+  const curAreaBase = materialTotal + fabrication + installation + cutoutTotal + addonsTotal;
   const discountsTotal = discounts.reduce((s, d) => {
     const v = parseFloat(d.value) || 0;
-    const sub = totalMaterialCost + (totalSqft * fab) + (totalSqft * inst) + cutoutTotal + addonsTotal;
-    return s + (d.type === "%" ? sub * (v / 100) : v);
+    return s + (d.type === "%" ? curAreaBase * (v / 100) : v);
   }, 0);
-  // placeholder — real subtotal computed after helpers
-  const subtotal = totalMaterialCost + (totalSqft * fab) + (totalSqft * inst) + cutoutTotal + addonsTotal;
-  const total = Math.max(0, subtotal - discountsTotal);
+  const curAreaTotal = Math.max(0, curAreaBase - discountsTotal);
+  const subtotal = curAreaBase; // used for discount display in current area
+  const total = savedAreasTotal + curAreaTotal;
 
   const slabCount = slabSize > 0 && area > 0 ? Math.ceil(area / slabSize) : 0;
   const totalSlabSf = slabCount * slabSize;
@@ -1083,8 +1119,17 @@ export default function App() {
       slabDim: slabDim,
       slabP: selectedSlabP,
       est: selectedEst,
+      // snapshot all costs at time of saving
+      addons: JSON.parse(JSON.stringify(addons)),
+      discounts: JSON.parse(JSON.stringify(discounts)),
+      hasCutouts,
+      cutoutDesc,
+      cutoutQty,
+      cutoutPrice,
+      fabRate,
+      instRate,
     }]);
-    // reset form for next area
+    // reset form for next area — keep rates, reset everything else
     setAreaLabel("");
     setSqft("");
     setMaterialPrice("");
@@ -1096,14 +1141,178 @@ export default function App() {
     setSelectedNote("");
     setSelectedSlabP(null);
     setMaterial(0);
+    setAddons([{ id: uid(), name: "Mitring (sq ft)", qty: "0", price: "60", locked: true }]);
+    setDiscounts([]);
+    setHasCutouts(false);
+    setCutoutDesc("");
+    setCutoutQty("");
+    setCutoutPrice("200");
   }
   function removeArea(id) { setAreas(areas.filter(a => a.id !== id)); }
 
-  // totals across all saved areas + current area
-  const allAreasSqft = areas.reduce((s, a) => s + a.sqft, 0);
-  const allAreasMaterialTotal = areas.reduce((s, a) => s + (a.materialPrice * a.sqft * materialOptions[a.materialType].multiplier), 0);
-  const totalSqft = allAreasSqft + area;
-  const totalMaterialCost = allAreasMaterialTotal + materialTotal;
+  function fmtPhone(p) {
+    const d = p.replace(/\D/g, "").slice(0, 10);
+    if (d.length < 4) return d;
+    if (d.length < 7) return `(${d.slice(0,3)}) ${d.slice(3)}`;
+    return `(${d.slice(0,3)}) ${d.slice(3,6)}-${d.slice(6)}`;
+  }
+  function fmtAddress(addr) {
+    if (!addr) return "";
+    // Title-case each word, preserve common abbreviations like NE, NW, SE, SW, unit #
+    const abbrevs = new Set(["ne","nw","se","sw","po","st","ave","blvd","dr","rd","ln","ct","pl","way","hwy","fwy","pkwy"]);
+    return addr.trim().split(" ").map((word, i) => {
+      const low = word.toLowerCase().replace(/,$/,"");
+      const comma = word.endsWith(",") ? "," : "";
+      if (!isNaN(word.replace(",",""))) return word; // keep numbers as-is
+      if (abbrevs.has(low)) return low.charAt(0).toUpperCase() + low.slice(1) + comma;
+      return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase() + (comma && !word.endsWith(",") ? "," : "");
+    }).join(" ");
+  }
+
+  function addNote() { setNotes([...notes, { id: uid(), text: "" }]); }
+  function removeNote(id) { setNotes(notes.filter(n => n.id !== id)); }
+  function updateNote(id, val) { setNotes(notes.map(n => n.id === id ? { ...n, text: val } : n)); }
+
+  function addSurface() {
+    if (surfaces.length < 10) setSurfaces([...surfaces, { id: uid(), label: "", l: "", w: "" }]);
+  }
+  function removeSurface(id) { setSurfaces(surfaces.filter(s => s.id !== id)); }
+  function updateSurface(id, field, val) { setSurfaces(surfaces.map(s => s.id === id ? { ...s, [field]: val } : s)); }
+  function calculateArea() {
+    const total = surfaces.reduce((sum, s) => {
+      const l = parseFloat(s.l) || 0;
+      const w = parseFloat(s.w) || 0;
+      return sum + (l * w) / 144;
+    }, 0);
+    setCalcTotal(total);
+  }
+  function useCalculatedArea() {
+    if (calcTotal !== null) setSqft(ceil2(calcTotal).toFixed(2));
+  }
+
+  function savePDF() {
+    const allAreas = [
+      ...areas,
+      ...(area > 0 && matPrice > 0 ? [{
+        id: "cur", label: areaLabel.trim() || (areas.length > 0 ? `Area ${areas.length+1}` : "Area 1"),
+        sqft: area, materialType: material, materialName: selectedName, materialVendor: selectedVendor,
+        materialPrice: matPrice, slabSf: slabSize, slabDim, slabP: selectedSlabP,
+        addons, discounts, hasCutouts, cutoutDesc, cutoutQty, cutoutPrice,
+        fabRate, instRate,
+      }] : [])
+    ];
+
+    const areaHTML = allAreas.map((a, idx) => {
+      const aFab = parseFloat(a.fabRate)||0;
+      const aInst = parseFloat(a.instRate)||0;
+      const aMat = ceil2(a.materialPrice * a.sqft * materialOptions[a.materialType].multiplier);
+      const aFabC = ceil2(a.sqft * aFab);
+      const aInstC = ceil2(a.sqft * aInst);
+      const aCutQty = parseInt(a.cutoutQty)||0;
+      const aCutPrice = parseFloat(a.cutoutPrice)||0;
+      const aCut = a.hasCutouts ? ceil2(aCutQty*aCutPrice) : 0;
+      const aAddons = (a.addons||[]).filter(x=>(parseFloat(x.qty)||0)*(parseFloat(x.price)||0)>0);
+      const aAdd = ceil2(aAddons.reduce((s,x)=>s+(parseFloat(x.qty)||0)*(parseFloat(x.price)||0),0));
+      const aBase = aMat+aFabC+aInstC+aCut+aAdd;
+      const aDiscounts = (a.discounts||[]).filter(d=>(parseFloat(d.value)||0)>0);
+      const aDisc = ceil2(aDiscounts.reduce((s,d)=>{const v=parseFloat(d.value)||0;return s+(d.type==="%"?aBase*(v/100):v);},0));
+      const aTotal = ceil2(Math.max(0,aBase-aDisc));
+      const areaSlabs = a.slabSf > 0 ? Math.ceil(a.sqft / a.slabSf) : 0;
+
+      return `
+        <div class="area-block">
+          <div class="area-header">
+            <span class="area-name">${a.label||`Area ${idx+1}`}</span>
+            <span class="area-meta">${a.sqft} sf &middot; ${materialOptions[a.materialType].label}</span>
+          </div>
+          ${a.materialName ? `<div class="material-name">${a.materialName}${a.materialVendor?" &mdash; "+a.materialVendor:""}</div>` : ""}
+          <div class="line-items">
+            <div class="line"><span>Material &nbsp; ${fmt(a.materialPrice)}/sf &times; ${a.sqft} sf &times; ${materialOptions[a.materialType].multiplier.toFixed(2)}</span><span>${fmt(aMat)}</span></div>
+            <div class="line"><span>Fabrication &nbsp; $${aFab}/sf &times; ${a.sqft} sf</span><span>${fmt(aFabC)}</span></div>
+            <div class="line"><span>Installation &nbsp; $${aInst}/sf &times; ${a.sqft} sf</span><span>${fmt(aInstC)}</span></div>
+            ${areaSlabs > 0 ? `<div class="line meta-line"><span>Slabs: ${areaSlabs} &times; ${a.slabDim}" (${a.slabSf} sf/slab)${a.slabP?" &middot; "+fmt(a.slabP*areaSlabs)+" slab cost":""}</span><span></span></div>` : ""}
+            ${aCut > 0 ? `<div class="line"><span>${a.cutoutDesc||"Cutouts"} &nbsp; ${aCutQty} &times; ${fmt(aCutPrice)}</span><span>${fmt(aCut)}</span></div>` : ""}
+            ${aAddons.map(x=>`<div class="line"><span>${x.name||"Add-on"} &nbsp; ${x.qty} &times; ${fmt(parseFloat(x.price)||0)}</span><span>${fmt(ceil2((parseFloat(x.qty)||0)*(parseFloat(x.price)||0)))}</span></div>`).join("")}
+            ${aDiscounts.map(d=>{const v=parseFloat(d.value)||0;const amt=ceil2(d.type==="%"?aBase*(v/100):v);return`<div class="line discount"><span>${d.name||"Discount"} ${d.type==="%"?`(${v}%)`:""}</span><span>-${fmt(amt)}</span></div>`;}).join("")}
+          </div>
+          <div class="area-total"><span>${a.label||`Area ${idx+1}`} Total</span><span class="green">${fmt(aTotal)}</span></div>
+        </div>`;
+    }).join("");
+
+    const customerHTML = customerPinned && (customer.name||customer.phone||customer.email||customer.address||customer.rep) ? `
+      <div class="section customer-section">
+        <div class="section-title">Customer</div>
+        ${customer.name?`<div class="line"><span>Name</span><span><strong>${customer.name}</strong></span></div>`:""}
+        ${customer.phone?`<div class="line"><span>Phone</span><span>${fmtPhone(customer.phone)}</span></div>`:""}
+        ${customer.email?`<div class="line"><span>Email</span><span>${customer.email.trim().toLowerCase()}</span></div>`:""}
+        ${customer.address?`<div class="line"><span>Address</span><span>${fmtAddress(customer.address)}</span></div>`:""}
+        ${customer.rep?`<div class="line"><span>Representative</span><span><strong>${customer.rep}</strong></span></div>`:""}
+      </div>` : "";
+
+    const notesHTML = notesPinned && notes.some(n=>n.text.trim()) ? `
+      <div class="section notes-section">
+        <div class="section-title">Project Notes</div>
+        ${notes.filter(n=>n.text.trim()).map((n,i)=>`
+          <div class="note-block">
+            <div class="note-label">Note ${i+1}</div>
+            <div class="note-text">${n.text.replace(/\n/g,"<br/>")}</div>
+          </div>`).join("")}
+      </div>` : "";
+
+    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"/>
+      <title>Price Estimate${customer.name?" — "+customer.name:""}</title>
+      <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: Arial, sans-serif; font-size: 11pt; color: #111; padding: 40px; max-width: 750px; margin: auto; }
+        h1 { font-size: 22pt; color: #111; margin-bottom: 4px; }
+        .date { font-size: 9pt; color: #888; margin-bottom: 20px; }
+        .section { border-top: 2px solid #e5e5e5; padding: 14px 0; margin-bottom: 4px; }
+        .section-title { font-size: 8pt; font-weight: bold; color: #4a90d9; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 10px; }
+        .customer-section .line { display: flex; justify-content: space-between; font-size: 10pt; padding: 2px 0; }
+        .customer-section .line span:first-child { color: #666; min-width: 110px; }
+        .area-block { border-top: 1.5px solid #e5e5e5; padding: 12px 0 8px; }
+        .area-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px; }
+        .area-name { font-size: 10pt; font-weight: bold; color: #4a90d9; text-transform: uppercase; letter-spacing: 0.06em; }
+        .area-meta { font-size: 9pt; color: #888; }
+        .material-name { font-size: 9pt; color: #666; font-style: italic; margin-bottom: 6px; }
+        .line-items { padding-left: 12px; }
+        .line { display: flex; justify-content: space-between; font-size: 9.5pt; padding: 2px 0; color: #333; }
+        .line.meta-line { color: #888; font-size: 8.5pt; }
+        .line.discount { color: #c0392b; }
+        .area-total { display: flex; justify-content: space-between; font-weight: bold; font-size: 10.5pt; border-top: 1px solid #ddd; margin-top: 8px; padding-top: 6px; }
+        .green { color: #1a8a3a; }
+        .grand-total { border-top: 2.5px solid #1a8a3a; margin-top: 16px; padding-top: 12px; display: flex; justify-content: space-between; align-items: baseline; }
+        .grand-label { font-size: 14pt; font-weight: bold; }
+        .grand-value { font-size: 18pt; font-weight: bold; color: #1a8a3a; }
+        .sqft-note { font-size: 8.5pt; color: #888; margin-bottom: 8px; }
+        .notes-section .note-block { margin-bottom: 10px; }
+        .note-label { font-size: 8pt; font-weight: bold; color: #4a90d9; margin-bottom: 2px; }
+        .note-text { font-size: 9.5pt; color: #333; line-height: 1.5; }
+        @media print { body { padding: 20px; } }
+      </style>
+    </head><body>
+      <h1>Price Estimate</h1>
+      <div class="date">Generated: ${new Date().toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric"})}</div>
+      ${customerHTML}
+      <div class="section">
+        <div class="section-title">Cost Breakdown</div>
+        ${areaHTML}
+        <div class="sqft-note">${ceil2(totalSqft).toFixed(2)} sq ft total across ${allAreas.length} area${allAreas.length!==1?"s":""}</div>
+        <div class="grand-total">
+          <span class="grand-label">Estimate Total</span>
+          <span class="grand-value">${fmt(ceil2(total))}</span>
+        </div>
+      </div>
+      ${notesHTML}
+    </body></html>`;
+
+    const win = window.open("", "_blank");
+    win.document.write(html);
+    win.document.close();
+    win.focus();
+    setTimeout(() => { win.print(); }, 400);
+  }
+
 
   const inp = "w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2.5 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500";
   const inpSm = "w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500";
@@ -1114,9 +1323,157 @@ export default function App() {
         <h1 className="text-2xl font-bold text-white mb-1">Price Estimate</h1>
         <p className="text-gray-400 text-sm mb-2">Enter project details to generate a customer quote.</p>
 
+        {/* ── CUSTOMER INFO ── */}
+        <Section>
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium text-gray-300">Input customer information?</span>
+            <div className="flex gap-2">
+              <button onClick={() => setShowCustomer(true)}
+                className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${showCustomer ? "bg-blue-600 text-white" : "bg-gray-800 text-gray-400 border border-gray-700 hover:border-blue-500"}`}>
+                Yes
+              </button>
+              <button onClick={() => setShowCustomer(false)}
+                className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${!showCustomer ? "bg-gray-600 text-white" : "bg-gray-800 text-gray-400 border border-gray-700 hover:border-gray-500"}`}>
+                No
+              </button>
+            </div>
+          </div>
+          {showCustomer && (
+            <div className="space-y-3 pt-1">
+              <div>
+                <label className="block text-xs text-gray-400 mb-1">Customer Name</label>
+                <input type="text" value={customer.name} onChange={e => setCustomer({...customer, name: e.target.value})}
+                  placeholder="Full name" className={inp} />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs text-gray-400 mb-1">Phone</label>
+                  <input type="text" value={customer.phone} onChange={e => setCustomer({...customer, phone: fmtPhone(e.target.value)})}
+                    placeholder="(000) 000-0000" className={inpSm} />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-400 mb-1">Email</label>
+                  <input type="text" value={customer.email} onChange={e => setCustomer({...customer, email: e.target.value})}
+                    placeholder="email@example.com" className={inpSm} />
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs text-gray-400 mb-1">Project Address</label>
+                <input type="text" value={customer.address} onChange={e => setCustomer({...customer, address: e.target.value})}
+                  placeholder="Street address, City, State, ZIP" className={inp} />
+              </div>
+              <div>
+                <label className="block text-xs text-gray-400 mb-1">Representative Name</label>
+                <input type="text" value={customer.rep} onChange={e => setCustomer({...customer, rep: e.target.value})}
+                  placeholder="Sales rep or estimator name" className={inp} />
+              </div>
+              <button onClick={() => setCustomerPinned(true)}
+                disabled={!customer.name && !customer.phone && !customer.email && !customer.address && !customer.rep}
+                className={`w-full py-2.5 rounded-lg text-sm font-semibold border transition-all ${
+                  customer.name || customer.phone || customer.email || customer.address || customer.rep
+                    ? "bg-blue-700 hover:bg-blue-600 text-white border-blue-500"
+                    : "bg-gray-900 text-gray-600 border-gray-700 cursor-not-allowed"
+                }`}>
+                {customerPinned ? "✓ Added to Cost Breakdown" : "Add to Cost Breakdown"}
+              </button>
+            </div>
+          )}
+        </Section>
+
+        {/* ── SQ FT CALCULATOR ── */}
+        <Section>
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium text-gray-300">Do you need to calculate total Square Footage?</span>
+            <div className="flex gap-2">
+              <button onClick={() => { setShowCalc(true); }}
+                className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${showCalc ? "bg-blue-600 text-white" : "bg-gray-800 text-gray-400 border border-gray-700 hover:border-blue-500"}`}>
+                Yes
+              </button>
+              <button onClick={() => { setShowCalc(false); setCalcTotal(null); }}
+                className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${!showCalc ? "bg-gray-600 text-white" : "bg-gray-800 text-gray-400 border border-gray-700 hover:border-gray-500"}`}>
+                No
+              </button>
+            </div>
+          </div>
+
+          {showCalc && (
+            <div className="space-y-3 pt-2">
+              <p className="text-xs text-gray-500">Enter the Length and Width of each surface in inches. Press <strong className="text-gray-400">Calculate Area</strong> when done.</p>
+
+              {surfaces.map((s, idx) => (
+                <div key={s.id} className="flex gap-2 items-end pl-2 border-l-2 border-gray-700">
+                  <div className="flex-1">
+                    <label className="block text-xs text-gray-400 mb-1">Surface {idx + 1} label (optional)</label>
+                    <input type="text" value={s.label} onChange={e => updateSurface(s.id, "label", e.target.value)}
+                      placeholder={`e.g. Island, Left counter…`} className={inpSm} />
+                  </div>
+                  <div className="w-20">
+                    <label className="block text-xs text-gray-400 mb-1">L (in)</label>
+                    <input type="number" min="0" value={s.l} onChange={e => updateSurface(s.id, "l", e.target.value)} placeholder="0" className={inpSm} />
+                  </div>
+                  <div className="w-20">
+                    <label className="block text-xs text-gray-400 mb-1">W (in)</label>
+                    <input type="number" min="0" value={s.w} onChange={e => updateSurface(s.id, "w", e.target.value)} placeholder="0" className={inpSm} />
+                  </div>
+                  {surfaces.length > 1 ? (
+                    <button onClick={() => removeSurface(s.id)} className="pb-2.5 text-red-400 hover:text-red-300 text-lg font-bold leading-none">&times;</button>
+                  ) : <div className="w-5" />}
+                </div>
+              ))}
+
+              {surfaces.length < 10 && (
+                <button onClick={addSurface}
+                  className="px-3 py-1 rounded-lg text-xs font-medium bg-gray-800 text-blue-400 border border-gray-700 hover:border-blue-500">
+                  + Add Surface
+                </button>
+              )}
+
+              <button onClick={calculateArea}
+                className="w-full py-2.5 rounded-lg text-sm font-semibold bg-green-700 hover:bg-green-600 text-white border border-green-600 transition-all">
+                Calculate Area
+              </button>
+
+              {calcTotal !== null && (
+                <div className="bg-gray-800 rounded-lg p-4 border border-green-700 space-y-3">
+                  <div className="space-y-1">
+                    {surfaces.map((s, idx) => {
+                      const l = parseFloat(s.l) || 0;
+                      const w = parseFloat(s.w) || 0;
+                      const sf = (l * w) / 144;
+                      if (!l || !w) return null;
+                      return (
+                        <div key={s.id} className="flex justify-between text-xs text-gray-400">
+                          <span>{s.label || `Surface ${idx + 1}`} ({l}" × {w}")</span>
+                          <span>{ceil2(sf).toFixed(2)} sf</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div className="flex justify-between items-center border-t border-gray-700 pt-2">
+                    <span className="text-sm font-semibold text-white">Total Area</span>
+                    <span className="text-xl font-bold text-green-400">{ceil2(calcTotal).toFixed(2)} sq ft</span>
+                  </div>
+                  <button onClick={useCalculatedArea}
+                    className="w-full py-2 rounded-lg text-sm font-semibold bg-blue-700 hover:bg-blue-600 text-white border border-blue-500 transition-all">
+                    Use This Area in Estimate ↓
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+        </Section>
+
         {/* ── CORE ── */}
         <Section>
-          <Field label="Total Project Area (sq ft)">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-blue-400 uppercase tracking-wide">
+              {areas.length > 0 ? `Area ${areas.length + 1}` : "Area 1"} — Enter Details Below
+            </span>
+            {areas.length > 0 && (
+              <span className="text-xs text-gray-500">{areas.length} area{areas.length !== 1 ? "s" : ""} saved above</span>
+            )}
+          </div>
+          <Field label={`${areas.length === 0 ? "Area 1" : `Area ${areas.length + 1}`} — Total Area (sq ft)`}>
             <input type="number" min="0" value={sqft} onChange={e => setSqft(e.target.value)} placeholder="0" className={inp} />
           </Field>
 
@@ -1273,7 +1630,7 @@ export default function App() {
                       </div>
                     </div>
                     <div className="text-right ml-3 flex-shrink-0">
-                      <div className="text-sm font-bold text-green-400">${item.p.toFixed(2)}</div>
+                      <div className="text-sm font-bold text-green-400">${ceil2(item.p).toFixed(2)}</div>
                       <div className="text-xs text-gray-500">per sf (est.)</div>
                       {item.slabP && <div className="text-xs text-amber-400">${item.slabP.toLocaleString()} /slab</div>}
                     </div>
@@ -1287,56 +1644,6 @@ export default function App() {
           </div>
         )}
 
-        {/* ── ADD AREA BUTTON ── */}
-        {sqft && materialPrice && (
-          <button onClick={addArea}
-            className="w-full py-3 rounded-xl text-sm font-semibold bg-blue-700 hover:bg-blue-600 text-white border border-blue-500 transition-all flex items-center justify-center gap-2">
-            <span className="text-lg leading-none">+</span>
-            Add Area to Estimate{areaLabel.trim() ? ` — ${areaLabel.trim()}` : ""}
-          </button>
-        )}
-
-        {/* ── SAVED AREAS ── */}
-        {areas.length > 0 && (
-          <div className="bg-gray-900 rounded-xl p-5 border border-gray-800 space-y-3">
-            <div className="flex items-center justify-between">
-              <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wide">Areas in Estimate</h2>
-              <span className="text-xs text-gray-500">{areas.length} area{areas.length !== 1 ? "s" : ""} · {allAreasSqft.toFixed(1)} sf total</span>
-            </div>
-            {areas.map(a => {
-              const areaMat = a.materialPrice * a.sqft * materialOptions[a.materialType].multiplier;
-              const areaFab = a.sqft * (parseFloat(fabRate) || 0);
-              const areaInst = a.sqft * (parseFloat(instRate) || 0);
-              return (
-                <div key={a.id} className="bg-gray-800 rounded-lg p-3 border border-gray-700 flex items-start justify-between gap-2">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-sm font-semibold text-white">{a.label}</span>
-                      <span className="text-xs text-gray-400">{a.sqft} sf</span>
-                      <span className="text-xs text-gray-500">· {materialOptions[a.materialType].label}</span>
-                    </div>
-                    {a.materialName && <div className="text-xs text-blue-400 mt-0.5 truncate">{a.materialName}{a.materialVendor ? ` — ${a.materialVendor}` : ""}</div>}
-                    <div className="text-xs text-gray-500 mt-1">
-                      Material {fmt(areaMat)} · Fab {fmt(areaFab)} · Install {fmt(areaInst)}
-                    </div>
-                    {a.slabSf > 0 && (() => {
-                      const sc = Math.ceil(a.sqft / a.slabSf);
-                      return <div className="text-xs text-gray-500">{sc} slab{sc !== 1 ? "s" : ""} @ {a.slabDim}"</div>;
-                    })()}
-                  </div>
-                  <div className="flex flex-col items-end gap-1 flex-shrink-0">
-                    <span className="text-sm font-bold text-green-400">{fmt(areaMat)}</span>
-                    <button onClick={() => removeArea(a.id)} className="text-red-400 hover:text-red-300 text-xs">Remove</button>
-                  </div>
-                </div>
-              );
-            })}
-            <div className="pt-2 border-t border-gray-700 flex justify-between items-center text-sm">
-              <span className="text-gray-400">Saved areas material total</span>
-              <span className="font-bold text-green-400">{fmt(allAreasMaterialTotal)}</span>
-            </div>
-          </div>
-        )}
 
         {/* ── SLAB USAGE ── */}
         {slabCount > 0 && (
@@ -1344,10 +1651,10 @@ export default function App() {
             <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-3">Slab Usage</h2>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between text-gray-300"><span>Slabs needed</span><span className="font-bold text-white text-lg">{slabCount}</span></div>
-              <div className="flex justify-between text-gray-300"><span>Total slab coverage</span><span>{totalSlabSf.toFixed(1)} sf</span></div>
-              <div className="flex justify-between text-gray-300"><span>Waste / leftover</span><span>{(totalSlabSf - area).toFixed(1)} sf</span></div>
+              <div className="flex justify-between text-gray-300"><span>Total slab coverage</span><span>{ceil2(totalSlabSf).toFixed(2)} sf</span></div>
+              <div className="flex justify-between text-gray-300"><span>Waste / leftover</span><span>{ceil2(totalSlabSf - area).toFixed(2)} sf</span></div>
               <div className="pt-2">
-                <div className="flex justify-between text-xs text-gray-400 mb-1"><span>Last slab usage</span><span className={lastSlabPct <= 10 ? "text-yellow-400 font-bold" : ""}>{lastSlabPct.toFixed(1)}%</span></div>
+                <div className="flex justify-between text-xs text-gray-400 mb-1"><span>Last slab usage</span><span className={lastSlabPct <= 10 ? "text-yellow-400 font-bold" : ""}>{ceil2(lastSlabPct).toFixed(2)}%</span></div>
                 <div className="w-full bg-gray-700 rounded-full h-2.5">
                   <div className={`h-2.5 rounded-full ${lastSlabPct <= 10 ? "bg-yellow-500" : lastSlabPct <= 25 ? "bg-orange-500" : "bg-green-500"}`}
                     style={{ width: `${Math.min(lastSlabPct, 100)}%` }} />
@@ -1356,7 +1663,7 @@ export default function App() {
               {lastSlabPct <= 10 && (
                 <div className="mt-3 p-3 bg-yellow-900 border border-yellow-700 rounded-lg">
                   <p className="text-yellow-300 text-sm font-medium">Low usage on last slab</p>
-                  <p className="text-yellow-400 text-xs mt-1">Only using {lastSlabPct.toFixed(1)}% ({lastSlabUsed.toFixed(1)} sf). Consider a seam adjustment to fit on {slabCount - 1} slab{slabCount - 1 !== 1 ? "s" : ""}.</p>
+                  <p className="text-yellow-400 text-xs mt-1">Only using {ceil2(lastSlabPct).toFixed(2)}% ({ceil2(lastSlabUsed).toFixed(2)} sf). Consider a seam adjustment to fit on {slabCount - 1} slab{slabCount - 1 !== 1 ? "s" : ""}.</p>
                 </div>
               )}
             </div>
@@ -1460,54 +1767,305 @@ export default function App() {
           </div>
         </Section>
 
-        {/* ── COST BREAKDOWN ── */}
-        <div className="bg-gray-900 rounded-xl p-5 border border-gray-800">
-          <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-3">Cost Breakdown</h2>
-          <div className="space-y-2.5 text-sm">
-            {/* saved areas */}
+        {/* ── SAVED AREAS ── */}
+        {areas.length > 0 && (
+          <div className="bg-gray-900 rounded-xl p-5 border border-gray-800 space-y-3">
+            <div className="flex items-center justify-between">
+              <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wide">Areas in Estimate</h2>
+              <span className="text-xs text-gray-500">{areas.length} area{areas.length !== 1 ? "s" : ""} · {ceil2(allAreasSqft).toFixed(2)} sf total</span>
+            </div>
             {areas.map(a => {
               const areaMat = a.materialPrice * a.sqft * materialOptions[a.materialType].multiplier;
-              return <Row key={a.id} label={`${a.label} — ${a.materialName || materialOptions[a.materialType].label} (${fmt(a.materialPrice)}/sf × ${a.sqft} sf × ${materialOptions[a.materialType].multiplier.toFixed(2)})`} value={areaMat} bold />;
-            })}
-            {/* current area */}
-            {area > 0 && matPrice > 0 && (
-              <>
-                {selectedName && (
-                  <div className="mb-1">
-                    <div className="text-xs text-blue-400">{areaLabel.trim() || (areas.length > 0 ? `Area ${areas.length + 1}` : "")} {selectedName}</div>
-                    {selectedVendor && <div className="text-xs text-gray-500">Vendor: {selectedVendor}</div>}
-                  </div>
-                )}
-                <Row label={`${areaLabel.trim() || "Material"} (${fmt(matPrice)}/sf × ${area} sf × ${multiplier.toFixed(2)})`} value={materialTotal} bold />
-              </>
-            )}
-            {totalSqft > 0 && <Row label={`Fabrication (${totalSqft} sf × $${fab})`} value={totalSqft * fab} />}
-            {totalSqft > 0 && <Row label={`Installation (${totalSqft} sf × $${inst})`} value={totalSqft * inst} />}
-            {cutoutTotal > 0 && <Row label={`${cutoutDesc || "Cutouts"} (${coQty} × ${fmt(coPrice)})`} value={cutoutTotal} />}
-            {addons.filter(a => (parseFloat(a.qty)||0) * (parseFloat(a.price)||0) > 0).map(a => (
-              <Row key={a.id} label={`${a.name || "Add-on"} (${a.qty} × ${fmt(parseFloat(a.price)||0)})`} value={(parseFloat(a.qty)||0) * (parseFloat(a.price)||0)} />
-            ))}
-            {discounts.filter(d => (parseFloat(d.value)||0) > 0).map(d => {
-              const v = parseFloat(d.value) || 0;
-              const amt = d.type === "%" ? subtotal * (v / 100) : v;
+              const areaFab = a.sqft * (parseFloat(fabRate) || 0);
+              const areaInst = a.sqft * (parseFloat(instRate) || 0);
               return (
-                <div key={d.id} className="flex justify-between text-red-400">
-                  <span>{d.name || "Discount"} {d.type === "%" ? `(${v}%)` : ""}</span>
-                  <span>-{fmt(amt)}</span>
+                <div key={a.id} className="bg-gray-800 rounded-lg p-3 border border-gray-700 flex items-start justify-between gap-2">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-sm font-semibold text-white">{a.label}</span>
+                      <span className="text-xs text-gray-400">{a.sqft} sf</span>
+                      <span className="text-xs text-gray-500">· {materialOptions[a.materialType].label}</span>
+                    </div>
+                    {a.materialName && <div className="text-xs text-blue-400 mt-0.5 truncate">{a.materialName}{a.materialVendor ? ` — ${a.materialVendor}` : ""}</div>}
+                    <div className="text-xs text-gray-500 mt-1">
+                      Material {fmt(areaMat)} · Fab {fmt(areaFab)} · Install {fmt(areaInst)}
+                    </div>
+                    {a.slabSf > 0 && (() => {
+                      const sc = Math.ceil(a.sqft / a.slabSf);
+                      return <div className="text-xs text-gray-500">{sc} slab{sc !== 1 ? "s" : ""} @ {a.slabDim}"</div>;
+                    })()}
+                  </div>
+                  <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                    <span className="text-sm font-bold text-green-400">{fmt(areaMat)}</span>
+                    <button onClick={() => removeArea(a.id)} className="text-red-400 hover:text-red-300 text-xs">Remove</button>
+                  </div>
                 </div>
               );
             })}
-            <div className="border-t border-gray-700 pt-3 mt-3">
-              {totalSqft > 0 && (
-                <div className="text-xs text-gray-500 mb-2">{totalSqft.toFixed(1)} sq ft total across {areas.length + (area > 0 ? 1 : 0)} area{areas.length + (area > 0 ? 1 : 0) !== 1 ? "s" : ""}</div>
-              )}
-              <div className="flex justify-between items-center">
-                <span className="text-lg font-bold text-white">Estimate Total</span>
-                <span className="text-2xl font-bold text-green-400">{fmt(total)}</span>
-              </div>
+            <div className="pt-2 border-t border-gray-700 flex justify-between items-center text-sm">
+              <span className="text-gray-400">Saved areas material total</span>
+              <span className="font-bold text-green-400">{fmt(allAreasMaterialTotal)}</span>
             </div>
           </div>
+        )}
+
+        {/* ── ADD AREA BUTTON (BOTTOM) ── */}
+        <div className="space-y-2">
+          <button onClick={addArea}
+            disabled={!sqft || !materialPrice}
+            className={`w-full py-3 rounded-xl text-sm font-semibold border transition-all flex items-center justify-center gap-2 ${
+              sqft && materialPrice
+                ? "bg-blue-700 hover:bg-blue-600 text-white border-blue-500"
+                : "bg-gray-900 text-gray-600 border-gray-700 cursor-not-allowed"
+            }`}>
+            <span className="text-lg leading-none">+</span>
+            {sqft && materialPrice
+              ? `Save ${areaLabel.trim() || (areas.length === 0 ? "Area 1" : `Area ${areas.length + 1}`)} & Add Another Area`
+              : "Enter sq ft & material price above to add an area"}
+          </button>
+          {!sqft || !materialPrice ? (
+            <p className="text-xs text-center text-gray-600">Fill in the area details above, then click to save and enter your next area</p>
+          ) : null}
         </div>
+
+        {/* ── COST BREAKDOWN ── */}
+        <div className="bg-gray-900 rounded-xl p-5 border border-gray-800">
+          <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-4">Cost Breakdown</h2>
+          {customerPinned && (customer.name || customer.phone || customer.email || customer.address) && (
+            <div className="mb-4 pb-4 border-b border-gray-700 space-y-1">
+              <div className="text-xs font-bold text-blue-400 uppercase tracking-wide mb-2">Customer</div>
+              {customer.name && <div className="flex justify-between text-sm"><span className="text-gray-400">Name</span><span className="text-white font-medium">{customer.name}</span></div>}
+              {customer.phone && <div className="flex justify-between text-sm"><span className="text-gray-400">Phone</span><span className="text-white">{fmtPhone(customer.phone)}</span></div>}
+              {customer.email && <div className="flex justify-between text-sm"><span className="text-gray-400">Email</span><span className="text-white lowercase">{customer.email.trim().toLowerCase()}</span></div>}
+              {customer.address && <div className="flex justify-between text-sm"><span className="text-gray-400">Address</span><span className="text-white text-right max-w-xs">{fmtAddress(customer.address)}</span></div>}
+              {customer.rep && <div className="flex justify-between text-sm"><span className="text-gray-400">Representative</span><span className="text-white font-medium">{customer.rep}</span></div>}
+            </div>
+          )}
+          <div className="space-y-4 text-sm">
+
+            {/* ── SAVED AREAS — each fully itemized ── */}
+            {areas.map((a, idx) => {
+              const aFab = parseFloat(a.fabRate) || 0;
+              const aInst = parseFloat(a.instRate) || 0;
+              const areaMat = ceil2(a.materialPrice * a.sqft * materialOptions[a.materialType].multiplier);
+              const areaFab = ceil2(a.sqft * aFab);
+              const areaInst = ceil2(a.sqft * aInst);
+              const areaSlabs = a.slabSf > 0 ? Math.ceil(a.sqft / a.slabSf) : 0;
+              const aAddons = (a.addons || []).filter(x => (parseFloat(x.qty)||0)*(parseFloat(x.price)||0) > 0);
+              const aAddonsTotal = ceil2(aAddons.reduce((s,x) => s + (parseFloat(x.qty)||0)*(parseFloat(x.price)||0), 0));
+              const aCutoutQty = parseInt(a.cutoutQty) || 0;
+              const aCutoutPrice = parseFloat(a.cutoutPrice) || 0;
+              const aCutoutTotal = a.hasCutouts ? ceil2(aCutoutQty * aCutoutPrice) : 0;
+              const aDiscountBase = areaMat + areaFab + areaInst + aCutoutTotal + aAddonsTotal;
+              const aDiscounts = (a.discounts || []).filter(d => (parseFloat(d.value)||0) > 0);
+              const aDiscountsTotal = ceil2(aDiscounts.reduce((s,d) => {
+                const v = parseFloat(d.value)||0;
+                return s + (d.type === "%" ? aDiscountBase*(v/100) : v);
+              }, 0));
+              const areaTotal = ceil2(areaMat + areaFab + areaInst + aCutoutTotal + aAddonsTotal - aDiscountsTotal);
+              return (
+                <div key={a.id} className="space-y-1.5 pb-4 border-b border-gray-700">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs font-bold text-blue-400 uppercase tracking-wide">{a.label || `Area ${idx + 1}`}</span>
+                    <span className="text-xs text-gray-500">{a.sqft} sf · {materialOptions[a.materialType].label}</span>
+                  </div>
+                  {a.materialName && <div className="text-xs text-gray-500 mb-1.5">{a.materialName}{a.materialVendor ? ` — ${a.materialVendor}` : ""}</div>}
+                  <div className="pl-2 space-y-1">
+                    <Row label={`Material  ${fmt(a.materialPrice)}/sf × ${a.sqft} sf × ${materialOptions[a.materialType].multiplier.toFixed(2)}`} value={areaMat} bold />
+                    <Row label={`Fabrication  $${aFab}/sf × ${a.sqft} sf`} value={areaFab} />
+                    <Row label={`Installation  $${aInst}/sf × ${a.sqft} sf`} value={areaInst} />
+                    {areaSlabs > 0 && (
+                      <div className="text-xs text-gray-500 pt-0.5">
+                        Slabs: {areaSlabs} × {a.slabDim}" ({a.slabSf} sf/slab){a.slabP ? ` · ${fmt(a.slabP * areaSlabs)} slab cost` : ""}
+                      </div>
+                    )}
+                    {aCutoutTotal > 0 && <Row label={`${a.cutoutDesc || "Cutouts"}  ${aCutoutQty} × ${fmt(aCutoutPrice)}`} value={aCutoutTotal} />}
+                    {aAddons.map(x => (
+                      <Row key={x.id} label={`${x.name || "Add-on"}  ${x.qty} × ${fmt(parseFloat(x.price)||0)}`} value={ceil2((parseFloat(x.qty)||0)*(parseFloat(x.price)||0))} />
+                    ))}
+                    {aDiscounts.map(d => {
+                      const v = parseFloat(d.value)||0;
+                      const amt = ceil2(d.type === "%" ? aDiscountBase*(v/100) : v);
+                      return (
+                        <div key={d.id} className="flex justify-between text-red-400 text-sm">
+                          <span>{d.name || "Discount"} {d.type === "%" ? `(${v}%)` : ""}</span>
+                          <span>-{fmt(amt)}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div className="flex justify-between font-bold text-white pt-1.5 pl-2 border-t border-gray-700 mt-1">
+                    <span>{a.label || `Area ${idx + 1}`} Total</span>
+                    <span className="text-green-400">{fmt(areaTotal)}</span>
+                  </div>
+                </div>
+              );
+            })}
+
+            {/* ── CURRENT (unsaved) AREA — fully itemized ── */}
+            {area > 0 && matPrice > 0 && (() => {
+              const curMat = ceil2(materialTotal);
+              const curFab = ceil2(fabrication);
+              const curInst = ceil2(installation);
+              const curSlabs = slabSize > 0 ? Math.ceil(area / slabSize) : 0;
+              const curLabel = areaLabel.trim() || (areas.length > 0 ? `Area ${areas.length + 1}` : "Area 1");
+              return (
+                <div className="space-y-1.5 pb-3 border-b border-gray-700">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs font-bold text-blue-400 uppercase tracking-wide">{curLabel}</span>
+                    <span className="text-xs text-gray-500">{area} sf · {materialOptions[material].label}</span>
+                  </div>
+                  {selectedName && <div className="text-xs text-gray-500 mb-1">{selectedName}{selectedVendor ? ` — ${selectedVendor}` : ""}</div>}
+                  <div className="pl-2 space-y-1">
+                    <Row label={`Material  ${fmt(matPrice)}/sf × ${area} sf × ${multiplier.toFixed(2)}`} value={curMat} bold />
+                    <Row label={`Fabrication  $${fab}/sf × ${area} sf`} value={curFab} />
+                    <Row label={`Installation  $${inst}/sf × ${area} sf`} value={curInst} />
+                    {curSlabs > 0 && (
+                      <div className="text-xs text-gray-500 pt-0.5">
+                        Slabs: {curSlabs} × {slabDim}" ({slabSize} sf/slab){selectedSlabP ? ` · ${fmt(selectedSlabP * curSlabs)} slab cost` : ""}
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex justify-between font-semibold text-white pt-1 pl-2">
+                    <span>Area subtotal</span>
+                    <span>{fmt(curMat + curFab + curInst)}</span>
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* ── CUTOUTS ── */}
+            {cutoutTotal > 0 && (
+              <div className="space-y-1 pb-3 border-b border-gray-700">
+                <div className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-1">Cutouts</div>
+                <div className="pl-2">
+                  <Row label={`${cutoutDesc || "Sink / Fixture Cutout"}  ${coQty} × ${fmt(coPrice)}`} value={cutoutTotal} />
+                </div>
+              </div>
+            )}
+
+            {/* ── ADD-ONS ── */}
+            {addons.filter(a => (parseFloat(a.qty)||0) * (parseFloat(a.price)||0) > 0).length > 0 && (
+              <div className="space-y-1 pb-3 border-b border-gray-700">
+                <div className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-1">Add-ons</div>
+                <div className="pl-2 space-y-1">
+                  {addons.filter(a => (parseFloat(a.qty)||0) * (parseFloat(a.price)||0) > 0).map(a => (
+                    <Row key={a.id} label={`${a.name || "Add-on"}  ${a.qty} × ${fmt(parseFloat(a.price)||0)}`} value={ceil2((parseFloat(a.qty)||0) * (parseFloat(a.price)||0))} />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* ── DISCOUNTS ── */}
+            {discounts.filter(d => (parseFloat(d.value)||0) > 0).length > 0 && (
+              <div className="space-y-1 pb-3 border-b border-gray-700">
+                <div className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-1">Discounts</div>
+                <div className="pl-2 space-y-1">
+                  {discounts.filter(d => (parseFloat(d.value)||0) > 0).map(d => {
+                    const v = parseFloat(d.value) || 0;
+                    const amt = ceil2(d.type === "%" ? subtotal * (v / 100) : v);
+                    return (
+                      <div key={d.id} className="flex justify-between text-red-400">
+                        <span>{d.name || "Discount"} {d.type === "%" ? `(${v}%)` : ""}</span>
+                        <span>-{fmt(amt)}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* ── GRAND TOTAL ── */}
+            <div className="space-y-2 pt-1">
+              <div className="flex justify-between text-gray-400 text-xs">
+                <span>Total sq ft ({areas.length + (area > 0 ? 1 : 0)} area{areas.length + (area > 0 ? 1 : 0) !== 1 ? "s" : ""})</span>
+                <span>{ceil2(totalSqft).toFixed(2)} sf</span>
+              </div>
+              <div className="border-t border-gray-600 pt-3 mt-1">
+                <div className="flex justify-between items-center">
+                  <span className="text-lg font-bold text-white">Estimate Total</span>
+                  <span className="text-2xl font-bold text-green-400">{fmt(ceil2(total))}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* ── NOTES IN BREAKDOWN ── */}
+            {notesPinned && notes.some(n => n.text.trim()) && (
+              <div className="pt-4 border-t border-gray-700 space-y-3">
+                <div className="text-xs font-bold text-gray-400 uppercase tracking-wide">Project Notes</div>
+                {notes.filter(n => n.text.trim()).map((n, idx) => (
+                  <div key={n.id} className="flex gap-2 items-start bg-gray-800 rounded-lg p-3 border border-gray-700">
+                    <div className="flex-1">
+                      <div className="text-xs text-blue-400 font-semibold mb-1">Note {idx + 1}</div>
+                      <div className="text-sm text-gray-300 whitespace-pre-wrap">{n.text}</div>
+                    </div>
+                    <button onClick={() => removeNote(n.id)} className="text-red-400 hover:text-red-300 text-lg font-bold leading-none flex-shrink-0">&times;</button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+          </div>
+        </div>
+        {/* ── ADDITIONAL NOTES ── */}
+        <Section>
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium text-gray-300">Add notes for this project?</span>
+            <div className="flex gap-2">
+              <button onClick={() => setShowNotes(true)}
+                className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${showNotes ? "bg-blue-600 text-white" : "bg-gray-800 text-gray-400 border border-gray-700 hover:border-blue-500"}`}>
+                Yes
+              </button>
+              <button onClick={() => setShowNotes(false)}
+                className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${!showNotes ? "bg-gray-600 text-white" : "bg-gray-800 text-gray-400 border border-gray-700 hover:border-gray-500"}`}>
+                No
+              </button>
+            </div>
+          </div>
+          {showNotes && (
+            <div className="space-y-3 pt-1">
+              {notes.map((n, idx) => (
+                <div key={n.id} className="flex gap-2 items-start pl-2 border-l-2 border-gray-700">
+                  <div className="flex-1">
+                    <label className="block text-xs text-gray-400 mb-1">Note {idx + 1}</label>
+                    <textarea value={n.text} onChange={e => updateNote(n.id, e.target.value)}
+                      placeholder="e.g. Customer wants eased edge on island, seam location discussed…"
+                      rows={3}
+                      className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none" />
+                  </div>
+                  {notes.length > 1 && (
+                    <button onClick={() => removeNote(n.id)} className="mt-6 text-red-400 hover:text-red-300 text-lg font-bold leading-none">&times;</button>
+                  )}
+                </div>
+              ))}
+              {notes.length < 5 && (
+                <button onClick={addNote}
+                  className="px-3 py-1 rounded-lg text-xs font-medium bg-gray-800 text-blue-400 border border-gray-700 hover:border-blue-500">
+                  + Add Note
+                </button>
+              )}
+              <button onClick={() => setNotesPinned(true)}
+                disabled={!notes.some(n => n.text.trim())}
+                className={`w-full py-2.5 rounded-lg text-sm font-semibold border transition-all ${
+                  notes.some(n => n.text.trim())
+                    ? "bg-blue-700 hover:bg-blue-600 text-white border-blue-500"
+                    : "bg-gray-900 text-gray-600 border-gray-700 cursor-not-allowed"
+                }`}>
+                {notesPinned ? "✓ Added to Cost Breakdown" : "Add to Cost Breakdown"}
+              </button>
+            </div>
+          )}
+        </Section>
+
+        {/* ── SAVE TO PDF ── */}
+        <button onClick={savePDF}
+          className="w-full py-4 rounded-xl text-base font-bold bg-green-700 hover:bg-green-600 text-white border border-green-500 transition-all flex items-center justify-center gap-3 shadow-lg">
+          <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h4a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
+          </svg>
+          Save to PDF
+        </button>
+
       </div>
     </div>
   );
