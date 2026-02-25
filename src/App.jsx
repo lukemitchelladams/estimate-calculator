@@ -1024,6 +1024,8 @@ export default function App() {
   const [showCalc, setShowCalc] = useState(false);
   const [surfaces, setSurfaces] = useState([{ id: uid(), label: "", l: "", w: "" }]);
   const [calcTotal, setCalcTotal] = useState(null);
+  const [calcTitle, setCalcTitle] = useState("");
+  const [calcPinned, setCalcPinned] = useState(false);
 
   const [vendor, setVendor] = useState("All Vendors");
   const [search, setSearch] = useState("");
@@ -1456,6 +1458,15 @@ export default function App() {
                   <button onClick={useCalculatedArea}
                     className="w-full py-2 rounded-lg text-sm font-semibold bg-blue-700 hover:bg-blue-600 text-white border border-blue-500 transition-all">
                     Use This Area in Estimate ↓
+                  </button>
+                  <div>
+                    <label className="block text-xs text-gray-400 mb-1">Label for this calculation (optional)</label>
+                    <input type="text" value={calcTitle} onChange={e => setCalcTitle(e.target.value)}
+                      placeholder="e.g. Kitchen countertops, Bathroom vanity…" className={inpSm} />
+                  </div>
+                  <button onClick={() => setCalcPinned(true)}
+                    className="w-full py-2 rounded-lg text-sm font-semibold bg-gray-700 hover:bg-gray-600 text-white border border-gray-600 transition-all">
+                    {calcPinned ? "✓ Added to Cost Breakdown" : "Add Measurement to Cost Breakdown"}
                   </button>
                 </div>
               )}
@@ -1902,20 +1913,29 @@ export default function App() {
               );
             })}
 
-            {/* ── CURRENT (unsaved) AREA — fully itemized ── */}
+            {/* ── CURRENT (unsaved) AREA — fully itemized with cutouts, add-ons, discounts ── */}
             {area > 0 && matPrice > 0 && (() => {
               const curMat = ceil2(materialTotal);
               const curFab = ceil2(fabrication);
               const curInst = ceil2(installation);
               const curSlabs = slabSize > 0 ? Math.ceil(area / slabSize) : 0;
               const curLabel = areaLabel.trim() || (areas.length > 0 ? `Area ${areas.length + 1}` : "Area 1");
+              const curAddons = addons.filter(a => (parseFloat(a.qty)||0)*(parseFloat(a.price)||0) > 0);
+              const curAddonsTotal = ceil2(curAddons.reduce((s,a) => s+(parseFloat(a.qty)||0)*(parseFloat(a.price)||0), 0));
+              const curBase = curMat + curFab + curInst + cutoutTotal + curAddonsTotal;
+              const curDiscounts = discounts.filter(d => (parseFloat(d.value)||0) > 0);
+              const curDiscTotal = ceil2(curDiscounts.reduce((s,d) => {
+                const v = parseFloat(d.value)||0;
+                return s + (d.type === "%" ? curBase*(v/100) : v);
+              }, 0));
+              const curAreaTotal = ceil2(Math.max(0, curBase - curDiscTotal));
               return (
-                <div className="space-y-1.5 pb-3 border-b border-gray-700">
+                <div className="space-y-1.5 pb-4 border-b border-gray-700">
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-xs font-bold text-blue-400 uppercase tracking-wide">{curLabel}</span>
                     <span className="text-xs text-gray-500">{area} sf · {materialOptions[material].label}</span>
                   </div>
-                  {selectedName && <div className="text-xs text-gray-500 mb-1">{selectedName}{selectedVendor ? ` — ${selectedVendor}` : ""}</div>}
+                  {selectedName && <div className="text-xs text-gray-500 mb-1.5">{selectedName}{selectedVendor ? ` — ${selectedVendor}` : ""}</div>}
                   <div className="pl-2 space-y-1">
                     <Row label={`Material  ${fmt(matPrice)}/sf × ${area} sf × ${multiplier.toFixed(2)}`} value={curMat} bold />
                     <Row label={`Fabrication  $${fab}/sf × ${area} sf`} value={curFab} />
@@ -1925,55 +1945,30 @@ export default function App() {
                         Slabs: {curSlabs} × {slabDim}" ({slabSize} sf/slab){selectedSlabP ? ` · ${fmt(selectedSlabP * curSlabs)} slab cost` : ""}
                       </div>
                     )}
+                    {cutoutTotal > 0 && (
+                      <Row label={`${cutoutDesc || "Cutouts"}  ${coQty} × ${fmt(coPrice)}`} value={cutoutTotal} />
+                    )}
+                    {curAddons.map(a => (
+                      <Row key={a.id} label={`${a.name || "Add-on"}  ${a.qty} × ${fmt(parseFloat(a.price)||0)}`} value={ceil2((parseFloat(a.qty)||0)*(parseFloat(a.price)||0))} />
+                    ))}
+                    {curDiscounts.map(d => {
+                      const v = parseFloat(d.value)||0;
+                      const amt = ceil2(d.type === "%" ? curBase*(v/100) : v);
+                      return (
+                        <div key={d.id} className="flex justify-between text-red-400 text-sm">
+                          <span>{d.name || "Discount"} {d.type === "%" ? `(${v}%)` : ""}</span>
+                          <span>-{fmt(amt)}</span>
+                        </div>
+                      );
+                    })}
                   </div>
-                  <div className="flex justify-between font-semibold text-white pt-1 pl-2">
-                    <span>Area subtotal</span>
-                    <span>{fmt(curMat + curFab + curInst)}</span>
+                  <div className="flex justify-between font-bold text-white pt-1.5 pl-2 border-t border-gray-700 mt-1">
+                    <span>{curLabel} Total</span>
+                    <span className="text-green-400">{fmt(curAreaTotal)}</span>
                   </div>
                 </div>
               );
             })()}
-
-            {/* ── CUTOUTS ── */}
-            {cutoutTotal > 0 && (
-              <div className="space-y-1 pb-3 border-b border-gray-700">
-                <div className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-1">Cutouts</div>
-                <div className="pl-2">
-                  <Row label={`${cutoutDesc || "Sink / Fixture Cutout"}  ${coQty} × ${fmt(coPrice)}`} value={cutoutTotal} />
-                </div>
-              </div>
-            )}
-
-            {/* ── ADD-ONS ── */}
-            {addons.filter(a => (parseFloat(a.qty)||0) * (parseFloat(a.price)||0) > 0).length > 0 && (
-              <div className="space-y-1 pb-3 border-b border-gray-700">
-                <div className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-1">Add-ons</div>
-                <div className="pl-2 space-y-1">
-                  {addons.filter(a => (parseFloat(a.qty)||0) * (parseFloat(a.price)||0) > 0).map(a => (
-                    <Row key={a.id} label={`${a.name || "Add-on"}  ${a.qty} × ${fmt(parseFloat(a.price)||0)}`} value={ceil2((parseFloat(a.qty)||0) * (parseFloat(a.price)||0))} />
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* ── DISCOUNTS ── */}
-            {discounts.filter(d => (parseFloat(d.value)||0) > 0).length > 0 && (
-              <div className="space-y-1 pb-3 border-b border-gray-700">
-                <div className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-1">Discounts</div>
-                <div className="pl-2 space-y-1">
-                  {discounts.filter(d => (parseFloat(d.value)||0) > 0).map(d => {
-                    const v = parseFloat(d.value) || 0;
-                    const amt = ceil2(d.type === "%" ? subtotal * (v / 100) : v);
-                    return (
-                      <div key={d.id} className="flex justify-between text-red-400">
-                        <span>{d.name || "Discount"} {d.type === "%" ? `(${v}%)` : ""}</span>
-                        <span>-{fmt(amt)}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
 
             {/* ── GRAND TOTAL ── */}
             <div className="space-y-2 pt-1">
@@ -1988,6 +1983,28 @@ export default function App() {
                 </div>
               </div>
             </div>
+
+            {/* ── SQ FT CALC IN BREAKDOWN ── */}
+            {calcPinned && calcTotal !== null && (
+              <div className="pt-4 border-t border-gray-700 space-y-2">
+                <div className="text-xs font-bold text-blue-400 uppercase tracking-wide">
+                  Area Measurement{calcTitle.trim() ? ` — ${calcTitle.trim()}` : ""}
+                </div>
+                {surfaces.filter(s => (parseFloat(s.l)||0) && (parseFloat(s.w)||0)).map((s, idx) => {
+                  const sf = ceil2((parseFloat(s.l)||0) * (parseFloat(s.w)||0) / 144);
+                  return (
+                    <div key={s.id} className="flex justify-between text-xs text-gray-400 pl-2">
+                      <span>{s.label || `Surface ${idx+1}`} ({s.l}" × {s.w}")</span>
+                      <span>{sf.toFixed(2)} sf</span>
+                    </div>
+                  );
+                })}
+                <div className="flex justify-between text-sm font-semibold text-white pl-2 border-t border-gray-700 pt-1">
+                  <span>Total Measured Area</span>
+                  <span>{ceil2(calcTotal).toFixed(2)} sq ft</span>
+                </div>
+              </div>
+            )}
 
             {/* ── NOTES IN BREAKDOWN ── */}
             {notesPinned && notes.some(n => n.text.trim()) && (
