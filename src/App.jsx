@@ -1430,6 +1430,15 @@ export default function App() {
         </div>
       </div>
       ${notesHTML}
+      ${sketchSvg ? `
+      <div style="page-break-before:always; padding-top:40px;">
+        <h2 style="font-size:16pt;font-weight:bold;color:#111;margin-bottom:4px;">Space Drawing</h2>
+        <div style="font-size:9pt;color:#888;margin-bottom:20px;">Generated from field sketch</div>
+        <div style="border-top:2px solid #e5e5e5;padding-top:16px;">
+          ${sketchSvg.replace(/style="background:#111827;border-radius:8px"/g, 'style="background:#f9fafb;border-radius:4px;border:1px solid #e5e5e5"')}
+        </div>
+        ${sketchAreaTotal ? `<div style="margin-top:16px;font-size:11pt;color:#333;">Total measured area: <strong style="color:#1a8a3a;">${sketchAreaTotal.toFixed(2)} sq ft</strong></div>` : ""}
+      </div>` : ""}
     </body></html>`;
 
     const win = window.open("", "_blank");
@@ -1533,25 +1542,21 @@ export default function App() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                   </svg>
                   <span className="text-sm text-gray-400">Tap to upload or take a photo</span>
-                  <span className="text-xs text-gray-600 mt-1">JPG, PNG, HEIC supported</span>
-                  <input type="file" accept="image/*" capture="environment" className="hidden" onChange={async e => {
+                  <span className="text-xs text-gray-600 mt-1">JPG or PNG only — iPhone users: take a screenshot instead of uploading from Photos</span>
+                  <input type="file" accept="image/jpeg,image/jpg,image/png,image/webp" capture="environment" className="hidden" onChange={async e => {
                     const file = e.target.files[0];
                     if (!file) return;
-                    // Convert any format (including HEIC) to JPEG via canvas
+                    const type = file.type.toLowerCase();
+                    if (!["image/jpeg","image/jpg","image/png","image/webp"].includes(type)) {
+                      setSketchError("HEIC photos not supported. In your iPhone Photos app, tap Share → Save as JPEG, or take a screenshot of the drawing instead.");
+                      return;
+                    }
                     const reader = new FileReader();
                     reader.onload = async ev => {
-                      const img = new Image();
-                      img.onload = async () => {
-                        const canvas = document.createElement("canvas");
-                        canvas.width = img.width;
-                        canvas.height = img.height;
-                        canvas.getContext("2d").drawImage(img, 0, 0);
-                        const jpegDataUrl = canvas.toDataURL("image/jpeg", 0.92);
-                        setSketchImage(jpegDataUrl);
-                        const base64 = jpegDataUrl.split(",")[1];
-                        await analyzeSketch(base64);
-                      };
-                      img.src = ev.target.result;
+                      const dataUrl = ev.target.result;
+                      setSketchImage(dataUrl);
+                      const base64 = dataUrl.split(",")[1];
+                      await analyzeSketch(base64);
                     };
                     reader.readAsDataURL(file);
                   }} />
