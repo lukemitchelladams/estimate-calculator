@@ -1050,7 +1050,7 @@ export default function App() {
   const coQty = parseInt(cutoutQty) || 0;
   const coPrice = parseFloat(cutoutPrice) || 0;
 
-  // Billing is always by full slabs — if slab size is set, charge for every slab that must be purchased
+  // Always charge by full slabs purchased — if slab size is set, bill slabCount × slabSf
   const slabBillableSf = slabSize > 0 && area > 0 ? Math.ceil(area / slabSize) * slabSize : area;
   const materialTotal = matPrice * slabBillableSf * multiplier;
   const fabrication = area * fab;
@@ -2132,8 +2132,8 @@ export default function App() {
               <span className="text-xs text-gray-500">{areas.length} area{areas.length !== 1 ? "s" : ""} · {ceil2(allAreasSqft).toFixed(2)} sf total</span>
             </div>
             {areas.map(a => {
-              const aSlabsCount = a.slabSf > 0 ? Math.ceil(a.sqft / a.slabSf) : 0;
-              const aMiniBillable = aSlabsCount > 0 ? aSlabsCount * a.slabSf : a.sqft;
+              const aMiniSlabs = a.slabSf > 0 ? Math.ceil(a.sqft / a.slabSf) : 0;
+              const aMiniBillable = aMiniSlabs > 0 ? aMiniSlabs * a.slabSf : a.sqft;
               const areaMat = a.materialPrice * aMiniBillable * materialOptions[a.materialType].multiplier;
               const areaFab = a.sqft * (parseFloat(fabRate) || 0);
               const areaInst = a.sqft * (parseFloat(instRate) || 0);
