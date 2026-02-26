@@ -1050,7 +1050,9 @@ export default function App() {
   const coQty = parseInt(cutoutQty) || 0;
   const coPrice = parseFloat(cutoutPrice) || 0;
 
-  const materialTotal = matPrice * area * multiplier;
+  // Billing is always by full slabs — if slab size is set, charge for every slab that must be purchased
+  const slabBillableSf = slabSize > 0 && area > 0 ? Math.ceil(area / slabSize) * slabSize : area;
+  const materialTotal = matPrice * slabBillableSf * multiplier;
   const fabrication = area * fab;
   const installation = area * inst;
   const cutoutTotal = hasCutouts ? coQty * coPrice : 0;
@@ -1058,7 +1060,10 @@ export default function App() {
 
   // totals across all saved areas (each uses its own snapshotted rates/addons/discounts)
   const allAreasSqft = areas.reduce((s, a) => s + a.sqft, 0);
-  const allAreasMaterialTotal = areas.reduce((s, a) => s + (a.materialPrice * a.sqft * materialOptions[a.materialType].multiplier), 0);
+  const allAreasMaterialTotal = areas.reduce((s, a) => {
+    const aBillable = a.slabSf > 0 ? Math.ceil(a.sqft / a.slabSf) * a.slabSf : a.sqft;
+    return s + (a.materialPrice * aBillable * materialOptions[a.materialType].multiplier);
+  }, 0);
   const totalSqft = allAreasSqft + area;
   const totalMaterialCost = allAreasMaterialTotal + materialTotal;
 
@@ -1066,7 +1071,8 @@ export default function App() {
   const savedAreasTotal = areas.reduce((s, a) => {
     const aFab = parseFloat(a.fabRate) || 0;
     const aInst = parseFloat(a.instRate) || 0;
-    const aMat = a.materialPrice * a.sqft * materialOptions[a.materialType].multiplier;
+    const aBillable = a.slabSf > 0 ? Math.ceil(a.sqft / a.slabSf) * a.slabSf : a.sqft;
+    const aMat = a.materialPrice * aBillable * materialOptions[a.materialType].multiplier;
     const aFabCost = a.sqft * aFab;
     const aInstCost = a.sqft * aInst;
     const aCutQty = parseInt(a.cutoutQty) || 0;
@@ -1352,7 +1358,9 @@ export default function App() {
     const areaHTML = allAreas.map((a, idx) => {
       const aFab = parseFloat(a.fabRate)||0;
       const aInst = parseFloat(a.instRate)||0;
-      const aMat = ceil2(a.materialPrice * a.sqft * materialOptions[a.materialType].multiplier);
+      const areaSlabs = a.slabSf > 0 ? Math.ceil(a.sqft / a.slabSf) : 0;
+      const aPdfBillable = areaSlabs > 0 ? areaSlabs * a.slabSf : a.sqft;
+      const aMat = ceil2(a.materialPrice * aPdfBillable * materialOptions[a.materialType].multiplier);
       const aFabC = ceil2(a.sqft * aFab);
       const aInstC = ceil2(a.sqft * aInst);
       const aCutQty = parseInt(a.cutoutQty)||0;
@@ -1364,7 +1372,6 @@ export default function App() {
       const aDiscounts = (a.discounts||[]).filter(d=>(parseFloat(d.value)||0)>0);
       const aDisc = ceil2(aDiscounts.reduce((s,d)=>{const v=parseFloat(d.value)||0;return s+(d.type==="%"?aBase*(v/100):v);},0));
       const aTotal = ceil2(Math.max(0,aBase-aDisc));
-      const areaSlabs = a.slabSf > 0 ? Math.ceil(a.sqft / a.slabSf) : 0;
 
       return `
         <div class="area-block">
@@ -1374,7 +1381,7 @@ export default function App() {
           </div>
           ${a.materialName ? `<div class="material-name">${a.materialName}${a.materialVendor?" &mdash; "+a.materialVendor:""}</div>` : ""}
           <div class="line-items">
-            <div class="line"><span>Material &nbsp; ${fmt(a.materialPrice)}/sf &times; ${a.sqft} sf &times; ${materialOptions[a.materialType].multiplier.toFixed(2)}</span><span>${fmt(aMat)}</span></div>
+            <div class="line"><span>Material &nbsp; ${fmt(a.materialPrice)}/sf &times; ${areaSlabs > 0 ? `${areaSlabs} slab${areaSlabs!==1?"s":""} (${aPdfBillable.toFixed(2)} sf)` : `${a.sqft} sf`} &times; ${materialOptions[a.materialType].multiplier.toFixed(2)}</span><span>${fmt(aMat)}</span></div>
             <div class="line"><span>Fabrication &nbsp; $${aFab}/sf &times; ${a.sqft} sf</span><span>${fmt(aFabC)}</span></div>
             <div class="line"><span>Installation &nbsp; $${aInst}/sf &times; ${a.sqft} sf</span><span>${fmt(aInstC)}</span></div>
             ${areaSlabs > 0 ? `<div class="line meta-line"><span>Slabs: ${areaSlabs} &times; ${a.slabDim}" (${a.slabSf} sf/slab)${a.slabP?" &middot; "+fmt(a.slabP*areaSlabs)+" slab cost":""}</span><span></span></div>` : ""}
@@ -2125,7 +2132,9 @@ export default function App() {
               <span className="text-xs text-gray-500">{areas.length} area{areas.length !== 1 ? "s" : ""} · {ceil2(allAreasSqft).toFixed(2)} sf total</span>
             </div>
             {areas.map(a => {
-              const areaMat = a.materialPrice * a.sqft * materialOptions[a.materialType].multiplier;
+              const aSlabsCount = a.slabSf > 0 ? Math.ceil(a.sqft / a.slabSf) : 0;
+              const aMiniBillable = aSlabsCount > 0 ? aSlabsCount * a.slabSf : a.sqft;
+              const areaMat = a.materialPrice * aMiniBillable * materialOptions[a.materialType].multiplier;
               const areaFab = a.sqft * (parseFloat(fabRate) || 0);
               const areaInst = a.sqft * (parseFloat(instRate) || 0);
               return (
@@ -2197,10 +2206,11 @@ export default function App() {
             {areas.map((a, idx) => {
               const aFab = parseFloat(a.fabRate) || 0;
               const aInst = parseFloat(a.instRate) || 0;
-              const areaMat = ceil2(a.materialPrice * a.sqft * materialOptions[a.materialType].multiplier);
+              const areaSlabs = a.slabSf > 0 ? Math.ceil(a.sqft / a.slabSf) : 0;
+              const aBreakBillable = areaSlabs > 0 ? areaSlabs * a.slabSf : a.sqft;
+              const areaMat = ceil2(a.materialPrice * aBreakBillable * materialOptions[a.materialType].multiplier);
               const areaFab = ceil2(a.sqft * aFab);
               const areaInst = ceil2(a.sqft * aInst);
-              const areaSlabs = a.slabSf > 0 ? Math.ceil(a.sqft / a.slabSf) : 0;
               const aAddons = (a.addons || []).filter(x => (parseFloat(x.qty)||0)*(parseFloat(x.price)||0) > 0);
               const aAddonsTotal = ceil2(aAddons.reduce((s,x) => s + (parseFloat(x.qty)||0)*(parseFloat(x.price)||0), 0));
               const aCutoutQty = parseInt(a.cutoutQty) || 0;
@@ -2236,7 +2246,7 @@ export default function App() {
                     </div>
                   )}
                   <div className="pl-2 space-y-1">
-                    <Row label={`Material  ${fmt(a.materialPrice)}/sf × ${a.sqft} sf × ${materialOptions[a.materialType].multiplier.toFixed(2)}`} value={areaMat} bold />
+                    <Row label={areaSlabs > 0 ? `Material  ${fmt(a.materialPrice)}/sf × ${areaSlabs} slab${areaSlabs!==1?"s":""} (${aBreakBillable.toFixed(2)} sf) × ${materialOptions[a.materialType].multiplier.toFixed(2)}` : `Material  ${fmt(a.materialPrice)}/sf × ${a.sqft} sf × ${materialOptions[a.materialType].multiplier.toFixed(2)}`} value={areaMat} bold />
                     <Row label={`Fabrication  $${aFab}/sf × ${a.sqft} sf`} value={areaFab} />
                     <Row label={`Installation  $${aInst}/sf × ${a.sqft} sf`} value={areaInst} />
                     {areaSlabs > 0 && (
@@ -2291,7 +2301,7 @@ export default function App() {
                   </div>
                   {selectedName && <div className="text-xs text-gray-500 mb-1.5">{selectedName}{selectedVendor ? ` — ${selectedVendor}` : ""}</div>}
                   <div className="pl-2 space-y-1">
-                    <Row label={`Material  ${fmt(matPrice)}/sf × ${area} sf × ${multiplier.toFixed(2)}`} value={curMat} bold />
+                    <Row label={curSlabs > 0 ? `Material  ${fmt(matPrice)}/sf × ${curSlabs} slab${curSlabs!==1?"s":""} (${slabBillableSf.toFixed(2)} sf) × ${multiplier.toFixed(2)}` : `Material  ${fmt(matPrice)}/sf × ${area} sf × ${multiplier.toFixed(2)}`} value={curMat} bold />
                     <Row label={`Fabrication  $${fab}/sf × ${area} sf`} value={curFab} />
                     <Row label={`Installation  $${inst}/sf × ${area} sf`} value={curInst} />
                     {curSlabs > 0 && (

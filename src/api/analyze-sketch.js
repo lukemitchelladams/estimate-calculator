@@ -9,6 +9,10 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: "No image data provided" });
   }
 
+  console.log("mediaType:", mediaType);
+  console.log("base64 length:", base64.length);
+  console.log("base64 prefix:", base64.substring(0, 30));
+
   try {
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
@@ -34,22 +38,7 @@ export default async function handler(req, res) {
             },
             {
               type: "text",
-              text: `Analyze this hand-drawn sketch. Extract every distinct shape (countertop section, island, vanity, etc.) with their side measurements. Return ONLY this JSON format:
-{
-  "shapes": [
-    {
-      "label": "shape name (e.g. Main Counter, Island)",
-      "type": "rectangle",
-      "sides": [
-        { "label": "Top", "inches": 96, "confident": true },
-        { "label": "Right", "inches": 26, "confident": true },
-        { "label": "Bottom", "inches": 96, "confident": false },
-        { "label": "Left", "inches": null, "confident": false }
-      ],
-      "notes": "any relevant notes"
-    }
-  ]
-}`
+              text: "Analyze this hand-drawn sketch. Extract every distinct shape with their side measurements. Return ONLY JSON: {\"shapes\":[{\"label\":\"shape name\",\"type\":\"rectangle\",\"sides\":[{\"label\":\"Top\",\"inches\":96,\"confident\":true},{\"label\":\"Right\",\"inches\":26,\"confident\":true},{\"label\":\"Bottom\",\"inches\":96,\"confident\":false},{\"label\":\"Left\",\"inches\":null,\"confident\":false}],\"notes\":\"\"}]}"
             }
           ]
         }]
@@ -57,9 +46,11 @@ export default async function handler(req, res) {
     });
 
     const data = await response.json();
+    console.log("Anthropic status:", response.status);
+    console.log("Anthropic response:", JSON.stringify(data).substring(0, 500));
 
     if (!response.ok) {
-      return res.status(500).json({ error: data.error?.message || "API error" });
+      return res.status(500).json({ error: data.error?.message || "API error", detail: data });
     }
 
     const text = data.content?.[0]?.text || "";
